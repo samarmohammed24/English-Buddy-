@@ -86,7 +86,7 @@ footer{text-align:center;color:#64748b;padding:15px}
 
 <section>
 <h2>🎯 English Level Test</h2>
-<p>Answer the questions to get an approximate level from A1 to C1.</p>
+<p>Answer grammar and listening questions to find your level from A1 to C2. Turn your sound on. The test stops when a level becomes too hard.</p>
 <button onclick="startTest()">Start Level Test</button>
 <div id="testArea"></div>
 </section>
@@ -476,60 +476,122 @@ if(p&&p.catch)p.catch(fail);
 play();
 }
 
+const TEST_LEVELS=["A1","A2","B1","B2","C1","C2"];
 const questions=[
-{q:"I ___ a student.",a:["am","is","are"],c:0,l:"A1"},
-{q:"She ___ to school every day.",a:["go","goes","going"],c:1,l:"A1"},
-{q:"They ___ playing football now.",a:["is","am","are"],c:2,l:"A1"},
-{q:"What is the opposite of 'hot'?",a:["Cold","Tall","Fast"],c:0,l:"A1"},
-{q:"Yesterday, I ___ my friend.",a:["see","saw","seen"],c:1,l:"A2"},
-{q:"I have lived here ___ 2020.",a:["for","since","during"],c:1,l:"A2"},
-{q:"If it rains, we ___ at home.",a:["will stay","stayed","staying"],c:0,l:"A2"},
-{q:"She is interested ___ music.",a:["on","at","in"],c:2,l:"A2"},
-{q:"If I had more time, I ___ travel.",a:["will","would","can"],c:1,l:"B1"},
-{q:"The letter ___ yesterday.",a:["sent","was sent","is sending"],c:1,l:"B1"},
-{q:"Despite ___ tired, he continued.",a:["being","was","be"],c:0,l:"B1"},
-{q:"The meeting was postponed ___ the storm.",a:["due to","although","unless"],c:0,l:"B2"},
-{q:"Her explanation was clear and ___.",a:["persuade","persuasive","persuasion"],c:1,l:"B2"},
-{q:"The findings were ___ with earlier research.",a:["consistent","consist","consistency"],c:0,l:"C1"},
-{q:"Rarely ___ such a compelling argument.",a:["I have heard","have I heard","I heard"],c:1,l:"C1"}
+{l:"A1",q:"I ___ a student.",a:["am","is","are"],c:0},
+{l:"A1",q:"She ___ to school every day.",a:["go","goes","going"],c:1},
+{l:"A1",q:"What is the opposite of 'hot'?",a:["Cold","Tall","Fast"],c:0},
+{l:"A1",audio:"My brother has a red bike.",q:"What did you hear?",a:["My brother has a red bike.","My mother has a red bag.","My brother has a blue bike."],c:0},
+{l:"A1",audio:"Sara wakes up at seven and drinks tea.",q:"What does Sara drink?",a:["Tea","Milk","Water"],c:0},
+{l:"A2",q:"Yesterday, I ___ my friend.",a:["see","saw","seen"],c:1},
+{l:"A2",q:"I have lived here ___ 2020.",a:["for","since","during"],c:1},
+{l:"A2",q:"She is interested ___ music.",a:["on","at","in"],c:2},
+{l:"A2",audio:"We are going to visit my uncle tomorrow.",q:"When are they visiting the uncle?",a:["Yesterday","Tomorrow","Next year"],c:1},
+{l:"A2",audio:"The bus to the city centre leaves at half past nine.",q:"What time does the bus leave?",a:["9:30","9:15","10:30"],c:0},
+{l:"B1",q:"If I had more time, I ___ travel.",a:["will","would","can"],c:1},
+{l:"B1",q:"The letter ___ yesterday.",a:["sent","was sent","is sending"],c:1},
+{l:"B1",q:"Despite ___ tired, he continued.",a:["being","was","be"],c:0},
+{l:"B1",audio:"I missed the bus because I stopped to buy water, so I arrived ten minutes late.",q:"Why was the speaker late?",a:["The bus was cancelled","He stopped to buy water","He woke up late"],c:1},
+{l:"B1",audio:"I'd like to book a table for two at eight o'clock, please.",q:"What does the speaker want?",a:["To order food","To book a table","To cancel a meeting"],c:1},
+{l:"B2",q:"The meeting was postponed ___ the storm.",a:["due to","although","unless"],c:0},
+{l:"B2",q:"Her explanation was clear and ___.",a:["persuade","persuasive","persuasion"],c:1},
+{l:"B2",q:"Not only ___ late, but he also forgot the documents.",a:["he was","was he","did he"],c:1},
+{l:"B2",audio:"Although the proposal was ambitious, the board rejected it because of the cost.",q:"Why was the proposal rejected?",a:["It was too simple","Because of the cost","Nobody read it"],c:1},
+{l:"B2",audio:"Had I known about the delay, I would have taken an earlier train.",q:"What does the speaker mean?",a:["He knew about the delay","He did not know about the delay","He took an earlier train"],c:1},
+{l:"C1",q:"The findings were ___ with earlier research.",a:["consistent","consist","consistency"],c:0},
+{l:"C1",q:"Rarely ___ such a compelling argument.",a:["I have heard","have I heard","I heard"],c:1},
+{l:"C1",q:"Had she ___ the risks, she would never have agreed.",a:["known","knew","know"],c:0},
+{l:"C1",audio:"The committee, though sceptical at first, was eventually persuaded by the evidence.",q:"How did the committee change?",a:["It was convinced by the evidence","It became more doubtful","It ignored the evidence"],c:0},
+{l:"C1",audio:"Rather than blaming her team, she accepted full responsibility for the failure.",q:"What did she do?",a:["She blamed her team","She took responsibility","She resigned"],c:1},
+{l:"C2",q:"It is imperative that he ___ the report by Friday.",a:["submits","submit","submitted"],c:1},
+{l:"C2",q:"Scarcely had we arrived ___ the rain began.",a:["than","when","that"],c:1},
+{l:"C2",q:"___ unusual it may seem, the policy proved effective.",a:["However","Although","Despite"],c:0},
+{l:"C2",audio:"His laconic reply, far from clarifying matters, only deepened the confusion.",q:"What was the effect of his reply?",a:["It clarified everything","It increased the confusion","It ended the discussion"],c:1},
+{l:"C2",audio:"The treaty was ostensibly a compromise, yet it favoured one party decisively.",q:"What does the speaker imply?",a:["The treaty was truly fair","The treaty seemed fair but was not","The treaty was rejected"],c:1}
 ];
 
-let testOrder=[],testPos=0,testScore=0,testAnswers=[];
+let testOrder=[],testPos=0,testAnswers=[];
 
 function startTest(){
-testOrder=questions.map((_,i)=>i).sort(()=>Math.random()-.5);
-testPos=0;testScore=0;testAnswers=[];renderTestQuestion();
+testOrder=questions.map((_,i)=>i);
+testPos=0;testAnswers=[];renderTestQuestion();
+}
+
+function levelScore(l){
+let s=0;
+testOrder.forEach((id,i)=>{if(questions[id].l===l&&testAnswers[i]===questions[id].c)s++;});
+return s;
 }
 
 function renderTestQuestion(){
 const q=questions[testOrder[testPos]],area=document.getElementById("testArea");
-area.innerHTML='<p>Question '+(testPos+1)+' of '+testOrder.length+'</p><div class="progress"><div style="width:'+(testPos/testOrder.length*100)+'%"></div></div><h3>'+q.q+'</h3><div id="testOptions"></div><p id="testFeedback"></p><button id="testNext" disabled onclick="nextTestQuestion()">'+(testPos===testOrder.length-1?"See Result":"Next Question")+'</button>';
+const isL=!!q.audio;
+const last=testPos===testOrder.length-1;
+area.innerHTML='<p>Question '+(testPos+1)+' • Level '+q.l+'</p><div class="progress"><div style="width:'+(testPos/testOrder.length*100)+'%"></div></div>'+
+'<h3>'+(isL?"🎧 Listening":"📝 Grammar")+'</h3>'+
+(isL?'<button id="testPlay" type="button">🔊 Play audio</button><p class="small">Play it as many times as you like. Needs internet and sound on.</p>':"")+
+'<p><b id="testQText"></b></p><div id="testOptions"></div><p id="testFeedback"></p>'+
+(isL?'<button id="testSkip" class="secondary" type="button">Skip (I cannot hear)</button>':"")+
+'<button id="testNext" disabled onclick="nextTestQuestion()">'+(last?"See Result":"Next Question")+'</button>';
+document.getElementById("testQText").textContent=q.q;
+if(isL){document.getElementById("testPlay").onclick=()=>speak(q.audio);}
+const finish=(chosen)=>{
+testAnswers[testPos]=chosen;
+document.querySelectorAll("#testOptions button").forEach((x,j)=>{x.disabled=true;if(j===q.c)x.classList.add("correct");});
+const fb=document.getElementById("testFeedback");
+if(chosen===q.c)fb.textContent="Correct! ✓";
+else if(chosen===-1)fb.textContent="Skipped. Correct answer: "+q.a[q.c];
+else fb.textContent="Correct answer: "+q.a[q.c];
+if(isL)fb.textContent+="  |  Audio said: "+q.audio;
+if(isL)document.getElementById("testSkip").disabled=true;
+document.getElementById("testNext").disabled=false;
+};
 q.a.forEach((a,i)=>{
 const b=document.createElement("button");b.className="option";b.textContent=a;
 b.onclick=()=>{
 if(testAnswers[testPos]!==undefined)return;
-testAnswers[testPos]=i;
-document.querySelectorAll("#testOptions button").forEach((x,j)=>{x.disabled=true;if(j===q.c)x.classList.add("correct")});
-if(i===q.c){testScore++;document.getElementById("testFeedback").textContent="Correct! ✓";}
-else{b.classList.add("wrong");document.getElementById("testFeedback").textContent="Correct answer: "+q.a[q.c];}
-document.getElementById("testNext").disabled=false;
+if(i!==q.c)b.classList.add("wrong");
+finish(i);
 };
 document.getElementById("testOptions").appendChild(b);
 });
+if(isL){document.getElementById("testSkip").onclick=()=>{if(testAnswers[testPos]!==undefined)return;finish(-1);};}
 }
 
 function nextTestQuestion(){
+const prev=questions[testOrder[testPos]];
 testPos++;
-if(testPos<testOrder.length){renderTestQuestion();return;}
-const by={A1:0,A2:0,B1:0,B2:0,C1:0};
-testOrder.forEach((id,i)=>{if(testAnswers[i]===questions[id].c)by[questions[id].l]++});
-let level="A1";
-if(by.A1>=3)level="A2";
-if(by.A1>=3&&by.A2>=2)level="B1";
-if(by.A1>=3&&by.A2>=2&&by.B1>=2)level="B2";
-if(by.A1>=3&&by.A2>=2&&by.B1>=2&&by.B2>=1&&by.C1>=1)level="C1";
-store("test_score",testScore+"/15");store("test_level",level);
-document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+testScore+' / 15</p><p>Estimated level: <b>'+level+'</b></p>';
+const nextQ=testPos<testOrder.length?questions[testOrder[testPos]]:null;
+const levelEnded=!nextQ||nextQ.l!==prev.l;
+if(nextQ&&!(levelEnded&&levelScore(prev.l)<3)){renderTestQuestion();return;}
+finishTest();
+}
+
+function useLevel(l){
+document.getElementById("level").value=l;
+document.getElementById("shadowLevel").value=l;
+renderStories();changeShadowLevel();
+document.getElementById("storyList").scrollIntoView({behavior:"smooth"});
+}
+
+function finishTest(){
+const done=testOrder.slice(0,testPos);
+let placed="A1",ok=true,total=0,asked=0;
+const detail=[];
+TEST_LEVELS.forEach(l=>{
+const n=questions.filter(q=>q.l===l).length;
+if(!done.some(id=>questions[id].l===l))return;
+const s=levelScore(l);total+=s;asked+=n;
+detail.push(l+": "+s+"/"+n);
+if(ok&&s>=3)placed=l;else ok=false;
+});
+const g=[0,0],li=[0,0];
+done.forEach((id,i)=>{const q=questions[id];const t=q.audio?li:g;t[1]++;if(testAnswers[i]===q.c)t[0]++;});
+const extra="Grammar "+g[0]+"/"+g[1]+" • Listening "+li[0]+"/"+li[1];
+store("test_score",total+"/"+asked);
+store("test_level",placed);
+store("test_detail",detail.join(" • ")+" | "+extra);
+document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+total+' / '+asked+'</p><p>Estimated level: <b>'+placed+'</b></p><p class="small">'+detail.join(" • ")+'</p><p class="small">'+extra+'</p><p class="small">You pass a level with 3 correct answers out of 5. If you skipped listening questions, your real level may be higher.</p><button type="button" onclick="useLevel(\''+placed+'\')">📚 Start stories at my level ('+placed+')</button>';
 showProgress();
 }
 
@@ -537,7 +599,8 @@ function showProgress(){
 const area=document.getElementById("progressArea");
 const tScore=saved("test_score","Not taken");
 const tLevel=saved("test_level","Not assessed");
-area.innerHTML='<div class="card"><p><b>Level Test Score:</b> '+tScore+'</p><p><b>Estimated Level:</b> '+tLevel+'</p></div>';
+const detail=saved("test_detail","");
+area.innerHTML='<div class="card"><p><b>Level Test Score:</b> '+tScore+'</p><p><b>Estimated Level:</b> '+tLevel+'</p>'+(detail?'<p class="small">'+detail+'</p>':"")+'</div>';
 }
 
 (function () {
