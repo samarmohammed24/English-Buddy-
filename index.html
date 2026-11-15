@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#263c70">
+<meta name="referrer" content="no-referrer">
+<title>English Buddy</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:15px;background:#f2f5ff;color:#263453;font-family:Arial,sans-serif;line-height:1.7}
+header{background:#263c70;color:white;padding:24px 15px;text-align:center;border-radius:20px}
+header h1{margin:0;font-size:29px}
+section{background:white;padding:17px;border-radius:16px;margin:15px 0}
+h2{font-size:22px}
+button,select{width:100%;padding:12px;margin:6px 0;border-radius:10px;font-size:16px}
+button{border:0;background:#405bd5;color:white;cursor:pointer}
+.secondary,.option{background:#edf0ff;color:#263453}
+.option{text-align:left;border:2px solid transparent}
+.correct{background:#d9f8e6!important;border-color:#219653!important}
+.wrong{background:#ffebeb!important;border-color:#d64545!important}
+.card,.word{padding:13px;margin:10px 0;border-radius:12px;background:#f5f7ff}
+.story{font-size:18px;line-height:1.9}
+.translation{background:#e9f8ef;padding:12px;border-radius:12px}
+.hidden{display:none}
+.small{font-size:13px;color:#64748b}
+.pill{display:inline-block;background:#d8f8e7;color:#17643c;padding:4px 12px;border-radius:20px}
+.progress{height:8px;background:#e4e9f5;border-radius:10px;overflow:hidden}
+.progress div{height:100%;background:#405bd5}
+footer{text-align:center;color:#64748b;padding:15px}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🌟 English Buddy</h1>
+<p>Your English Journey Starts Here!</p>
+<span class="pill">📴 Offline Content • 🔊 Online Audio</span>
+</header>
+
+<section>
+<h2>📚 Short Stories | القصص القصيرة</h2>
+<p>Choose your level, read the story, and reveal the Arabic translation whenever you need it.</p>
+<select id="level" onchange="renderStories()">
+<option value="A1">A1 - Beginner</option>
+<option value="A2">A2 - Elementary</option>
+<option value="B1" selected>B1 - Intermediate</option>
+<option value="B2">B2 - Upper Intermediate</option>
+<option value="C1">C1 - Advanced</option>
+<option value="C2">C2 - Proficiency</option>
+</select>
+<div id="storyList"></div>
+</section>
+
+<section id="reader" class="hidden">
+<div id="storyContent"></div>
+</section>
+
+<section>
+<h2>🗣️ Shadowing</h2>
+<p>Listen carefully, then repeat aloud.</p>
+<p id="shadowText" class="story">I want to speak English confidently.</p>
+<label for="shadowLevel">Choose your English level:</label>
+<select id="shadowLevel" onchange="changeShadowLevel()">
+<option value="A1">A1 - Beginner</option>
+<option value="A2" selected>A2 - Elementary</option>
+<option value="B1">B1 - Intermediate</option>
+<option value="B2">B2 - Upper Intermediate</option>
+<option value="C1">C1 - Advanced</option>
+<option value="C2">C2 - Proficient</option>
+</select>
+<p id="shadowTranslation" class="small">أريد أن أتحدث الإنجليزية بثقة.</p>
+<p id="shadowCounter" class="small"></p>
+<button type="button" onclick="speak(document.getElementById('shadowText').textContent.trim())">🔊 Listen and Repeat</button>
+<button type="button" class="secondary" onclick="nextShadowSentence()">➡️ Next Sentence</button>
+<button type="button" id="recBtn" class="secondary" onclick="recordVoice()">🎙️ Record My Voice</button>
+<audio id="recordedAudio" controls class="hidden" style="width:100%"></audio>
+<p id="recordStatus" class="small"></p>
+</section>
+
+<section>
+<h2>📝 Daily Vocabulary</h2>
+<div id="dailyWord"></div>
+<button class="secondary" onclick="nextWord()">Next Word / الكلمة التالية</button>
+</section>
+
+<section>
+<h2>🎯 English Level Test</h2>
+<p>Answer the questions to get an approximate level from A1 to C1.</p>
+<button onclick="startTest()">Start Level Test</button>
+<div id="testArea"></div>
+</section>
+
+<section>
+<h2>📈 My Progress</h2>
+<div id="progressArea"></div>
+<button class="secondary" onclick="showProgress()">Refresh Progress</button>
+</section>
+
+<footer>Made with ❤️ for your English journey</footer>
+
+<script>
+const stories = [
+{
+id:"a1_1",level:"A1",title:"A Busy Morning",
+en:"Sara wakes up at seven o'clock. She washes her face and eats breakfast. She drinks a cup of tea. Then she takes her bag and goes to school. She meets her friend at the school gate. They walk into the classroom together.",
+ar:"تستيقظ سارة الساعة السابعة. تغسل وجهها وتتناول الإفطار. تشرب كوباً من الشاي. ثم تأخذ حقيبتها وتذهب إلى المدرسة. تقابل صديقتها عند بوابة المدرسة. تدخلان الفصل معاً.",
+words:[["wake up","يستيقظ","I wake up early."],["breakfast","الإفطار","I eat breakfast at home."],["together","معاً","We study together."]],
+q:[
+{q:"What time does Sara wake up?",a:["At six","At seven","At eight"],c:1},
+{q:"What does Sara drink?",a:["Tea","Coffee","Milk"],c:0},
+{q:"Where does Sara meet her friend?",a:["At the shop","At home","At the school gate"],c:2}
+]},
+{
+id:"a1_2",level:"A1",title:"My Little Cat",
+en:"Mona has a little cat called Mimi. Mimi is white and has blue eyes. Every morning, Mona gives Mimi food and clean water. In the afternoon, they play in the garden. At night, Mimi sleeps on a small pillow beside Mona's bed. Mona loves her cat very much.",
+ar:"لدى منى قطة صغيرة اسمها ميمي. لون ميمي أبيض ولها عينان زرقاوان. كل صباح، تعطي منى ميمي الطعام والماء النظيف. في فترة بعد الظهر، تلعبان في الحديقة. في الليل، تنام ميمي على وسادة صغيرة بجانب سرير منى. تحب منى قطتها كثيراً.",
+words:[["little","صغير","I have a little bag."],["garden","حديقة","The children play in the garden."],["beside","بجانب","Sit beside me."]],
+q:[
+{q:"What is the cat's name?",a:["Lulu","Mimi","Lily"],c:1},
+{q:"Where do they play?",a:["In the garden","At school","In the kitchen"],c:0},
+{q:"Where does Mimi sleep?",a:["Under the table","Outside","Beside Mona's bed"],c:2}
+]},
+{
+id:"a2_1",level:"A2",title:"A New Friend",
+en:"Last month, Anna moved to a new town with her family. She felt nervous on her first day at school because she did not know anyone. During lunch, a friendly girl called Emma invited Anna to sit with her. They talked about books, music, and their favourite hobbies. After school, they walked home together. By the end of the week, Anna felt more comfortable and was happy to have a new friend.",
+ar:"في الشهر الماضي، انتقلت آنا إلى مدينة جديدة مع أسرتها. شعرت بالتوتر في أول يوم لها في المدرسة لأنها لم تكن تعرف أحداً. أثناء الغداء، دعت فتاة ودودة اسمها إيما آنا للجلوس معها. تحدثتا عن الكتب والموسيقى وهواياتهما المفضلة. بعد المدرسة، عادتا إلى المنزل معاً. وبنهاية الأسبوع، أصبحت آنا أكثر ارتياحاً وسعيدة لأنها كوّنت صديقة جديدة.",
+words:[["nervous","متوتر","I feel nervous before an exam."],["invite","يدعو","I invite my friend to lunch."],["comfortable","مرتاح","I feel comfortable here."]],
+q:[
+{q:"Why was Anna nervous?",a:["She lost her bag","She knew nobody at school","She was late for lunch"],c:1},
+{q:"What did Emma do?",a:["She invited Anna to sit with her","She gave Anna a book","She went home alone"],c:0},
+{q:"How did Anna feel at the end of the week?",a:["Angry","Bored","More comfortable"],c:2}
+]},
+{
+id:"a2_2",level:"A2",title:"Learning to Cook",
+en:"Omar wanted to learn how to cook, so he asked his older sister for help. On Saturday morning, they decided to make vegetable soup. His sister showed him how to wash and cut the vegetables safely. Omar followed the recipe and added water and spices. At first, he was worried that the soup would taste bad, but it was delicious. He felt proud and promised to cook dinner for the family next weekend.",
+ar:"أراد عمر أن يتعلم الطبخ، لذلك طلب المساعدة من أخته الكبرى. في صباح السبت، قررا إعداد شوربة الخضار. أرتْه أخته كيف يغسل الخضروات ويقطعها بأمان. اتبع عمر الوصفة وأضاف الماء والتوابل. في البداية، كان قلقاً من أن يكون طعم الشوربة سيئاً، لكنها كانت لذيذة. شعر بالفخر ووعد بإعداد العشاء للأسرة في نهاية الأسبوع القادم.",
+words:[["recipe","وصفة","This recipe is easy."],["delicious","لذيذ","The food is delicious."],["proud","فخور","I am proud of my work."]],
+q:[
+{q:"Who helped Omar?",a:["His friend","His older sister","His teacher"],c:1},
+{q:"What did they cook?",a:["Rice","Cake","Vegetable soup"],c:2},
+{q:"How did Omar feel after cooking?",a:["Proud","Angry","Sleepy"],c:0}
+]},
+{
+id:"b1_1",level:"B1",title:"The Power of a Small Habit",
+en:"For a long time, Lina wanted to improve her English, but she believed she needed several free hours every day. Because she was busy with university and family responsibilities, she often postponed studying. One day, she decided to change her approach. Instead of studying for two hours at once, she spent fifteen minutes each morning reading a short article and learning five new words. She also listened to English conversations while doing simple tasks. After several weeks, she noticed that she understood more expressions and felt less afraid of making mistakes. Lina learned that consistent practice can be more useful than waiting for the perfect time to begin.",
+ar:"لفترة طويلة، أرادت لينا تحسين لغتها الإنجليزية، لكنها اعتقدت أنها تحتاج إلى عدة ساعات فراغ كل يوم. وبسبب انشغالها بالجامعة ومسؤوليات الأسرة، كانت تؤجل الدراسة كثيراً. في أحد الأيام، قررت تغيير طريقتها. فبدلاً من الدراسة لساعتين متواصلتين، خصصت خمس عشرة دقيقة كل صباح لقراءة مقال قصير وتعلم خمس كلمات جديدة. كما استمعت إلى محادثات إنجليزية أثناء أداء بعض المهام البسيطة. بعد عدة أسابيع، لاحظت أنها أصبحت تفهم تعبيرات أكثر وتشعر بخوف أقل من ارتكاب الأخطاء. تعلمت لينا أن الممارسة المنتظمة قد تكون أنفع من انتظار الوقت المثالي للبدء.",
+words:[["postpone","يؤجل","Do not postpone your work."],["consistent","منتظم ومستمر","Consistent practice helps you improve."],["approach","طريقة أو أسلوب","I tried a new approach."]],
+q:[
+{q:"Why did Lina postpone studying?",a:["She disliked English","She was busy","She had no books"],c:1},
+{q:"How long did she study each morning?",a:["15 minutes","One hour","Two hours"],c:0},
+{q:"What is the main lesson?",a:["Study all day","Avoid every mistake","Small, regular practice can help"],c:2}
+]},
+{
+id:"b1_2",level:"B1",title:"A Missed Bus",
+en:"When Daniel left home for a job interview, he thought he had plenty of time. However, he stopped at a shop to buy water and missed his usual bus. He felt frustrated because the interview was important. Rather than giving up, he checked the bus schedule and found another route. He called the company to explain that he might arrive a little late. Fortunately, he reached the office only five minutes after the planned time, and the interviewer appreciated his honesty. Daniel realised that planning ahead matters, but staying calm and finding solutions is equally important.",
+ar:"عندما غادر دانيال منزله لإجراء مقابلة عمل، اعتقد أن لديه وقتاً كافياً. لكنه توقف في متجر لشراء الماء، ففاتته الحافلة المعتادة. شعر بالإحباط لأن المقابلة كانت مهمة. وبدلاً من الاستسلام، راجع جدول الحافلات ووجد مساراً آخر. اتصل بالشركة ليشرح أنه قد يصل متأخراً قليلاً. ولحسن الحظ، وصل إلى المكتب بعد الموعد المحدد بخمس دقائق فقط، وقدّر مسؤول المقابلة صراحته. أدرك دانيال أن التخطيط المسبق مهم، لكن الهدوء والبحث عن حلول مهمان بالقدر نفسه.",
+words:[["frustrated","محبط","I felt frustrated by the delay."],["route","مسار أو طريق","This route is faster."],["appreciate","يقدّر","I appreciate your help."]],
+q:[
+{q:"Why did Daniel miss his bus?",a:["He woke up late","He stopped at a shop","He forgot the address"],c:1},
+{q:"What did he do next?",a:["He went home","He cancelled the interview","He found another route and called"],c:2},
+{q:"What did Daniel learn?",a:["Only luck matters","Stay calm and find solutions","Never take a bus"],c:1}
+]},
+{
+id:"b2_1",level:"B2",title:"An Unexpected Journey",
+en:"When Maya booked a train ticket for a weekend trip, she expected a quiet journey. However, a sudden storm delayed the train for several hours. At first, the passengers were frustrated, but a station employee suggested visiting a nearby museum while they waited. Maya decided to explore the town. She discovered a small art gallery, enjoyed a delicious lunch, and spoke to a local artist who told her fascinating stories about the area. By the time the train was ready, Maya realised that the delay had turned an ordinary trip into an unforgettable adventure.",
+ar:"عندما حجزت مايا تذكرة قطار لرحلة في عطلة نهاية الأسبوع، توقعت رحلة هادئة. لكن عاصفة مفاجئة أخرت القطار عدة ساعات. في البداية، شعر الركاب بالإحباط، لكن موظفاً في المحطة اقترح زيارة متحف قريب أثناء الانتظار. قررت مايا استكشاف المدينة. اكتشفت معرضاً فنياً صغيراً، وتناولت غداءً لذيذاً، وتحدثت مع فنان محلي حكى لها قصصاً رائعة عن المنطقة. وعندما أصبح القطار جاهزاً، أدركت مايا أن التأخير حوّل رحلة عادية إلى مغامرة لا تُنسى.",
+words:[["delay","تأخير","The rain caused a delay."],["explore","يستكشف","We explored the old town."],["unforgettable","لا يُنسى","It was an unforgettable day."]],
+q:[
+{q:"What caused the train delay?",a:["A sudden storm","A missing ticket","A museum visit"],c:0},
+{q:"What did Maya do while waiting?",a:["She went home","She explored the town","She stayed on the train"],c:1},
+{q:"How did the delay affect her trip?",a:["It ruined everything","She missed the weekend","It became an adventure"],c:2}
+]},
+{
+id:"b2_2",level:"B2",title:"A Different Perspective",
+en:"When a new community library opened, some residents questioned whether it would attract enough visitors to justify its cost. A local teacher proposed organising free evening workshops, hoping to encourage people of different ages to take part. Within months, the library became a meeting place for students, parents, and retired professionals. Participants exchanged skills, helped one another with practical problems, and developed friendships across generations. The project did not eliminate every difficulty in the neighbourhood, but it demonstrated how a shared public space could strengthen relationships and create opportunities that had previously been overlooked.",
+ar:"عندما افتُتحت مكتبة مجتمعية جديدة، تساءل بعض السكان عما إذا كانت ستجذب عدداً كافياً من الزوار لتبرير تكلفتها. اقترح معلم محلي تنظيم ورشات مسائية مجانية لتشجيع أشخاص من أعمار مختلفة على المشاركة. خلال أشهر، أصبحت المكتبة مكاناً يلتقي فيه الطلاب والآباء والمتقاعدون أصحاب الخبرة. تبادل المشاركون المهارات، وساعد بعضهم بعضاً في المشكلات العملية، وبنوا صداقات بين الأجيال. لم يحل المشروع كل صعوبات الحي، لكنه أظهر كيف يمكن لمساحة عامة مشتركة أن تقوي العلاقات وتخلق فرصاً لم يكن الناس ينتبهون إليها من قبل.",
+words:[["justify","يبرر","Can you justify this decision?"],["overlooked","تم تجاهله","An important detail was overlooked."],["strengthen","يقوي","Practice can strengthen your skills."]],
+q:[
+{q:"What was the teacher's suggestion?",a:["Close the library","Organise free workshops","Charge higher fees"],c:1},
+{q:"What happened after several months?",a:["The library became a meeting place","Nobody visited","The project ended immediately"],c:0},
+{q:"What is the main message?",a:["Libraries are too expensive","Workshops solve every problem","Shared spaces can build community"],c:2}
+]},
+{
+id:"c1_1",level:"C1",title:"Beyond First Impressions",
+en:"People often form opinions about others within seconds, relying on appearance, tone of voice, or a brief exchange. Although such impressions can sometimes be useful, they are far from reliable. When Nadia joined a research team, she initially considered one colleague distant and uninterested. Over time, however, she discovered that he was simply careful about speaking before he had fully considered an idea. His thoughtful questions eventually helped the team identify weaknesses in its original proposal. Nadia began to recognise how easily a mistaken assumption can prevent us from appreciating qualities that are not immediately visible.",
+ar:"غالباً ما يكوّن الناس آراءهم عن الآخرين خلال ثوانٍ، اعتماداً على المظهر أو نبرة الصوت أو حديث قصير. ورغم أن هذه الانطباعات قد تكون مفيدة أحياناً، فإنها ليست موثوقة تماماً. عندما انضمت ناديا إلى فريق بحثي، اعتقدت في البداية أن أحد زملائها متحفظ وغير مهتم. لكنها اكتشفت مع مرور الوقت أنه كان يتأنى في الحديث حتى يفكر جيداً في الفكرة. وقد ساعدت أسئلته المدروسة الفريق في اكتشاف نقاط الضعف في مقترحه الأصلي. بدأت ناديا تدرك كيف يمكن لافتراض خاطئ أن يمنعنا من تقدير صفات لا تظهر فوراً.",
+words:[["reliable","موثوق","This source is reliable."],["assumption","افتراض","That assumption was incorrect."],["initially","في البداية","I initially disagreed with him."]],
+q:[
+{q:"Why did Nadia misunderstand her colleague?",a:["He seemed distant and quiet","He refused to work","He criticised her directly"],c:0},
+{q:"How did the colleague help?",a:["He left the team","He asked thoughtful questions","He cancelled the proposal"],c:1},
+{q:"What is the main idea?",a:["First impressions are always correct","Quiet people dislike teamwork","Initial judgments can hide real qualities"],c:2}
+]},
+{
+id:"c1_2",level:"C1",title:"The Cost of Convenience",
+en:"Modern technology has made many everyday tasks remarkably convenient. Information can be retrieved in seconds, and communication across continents is almost effortless. Yet convenience may carry an overlooked cost: the gradual erosion of patience and sustained attention. When every question appears to demand an immediate answer, people may become less willing to tolerate uncertainty or engage deeply with difficult ideas. This does not mean that technology should be rejected. Rather, its benefits are best realised when convenience is balanced with deliberate reflection, allowing tools to support human judgment instead of replacing it.",
+ar:"جعلت التكنولوجيا الحديثة كثيراً من المهام اليومية أكثر سهولة بصورة ملحوظة. يمكن الوصول إلى المعلومات خلال ثوانٍ، وأصبح التواصل عبر القارات سهلاً للغاية. ومع ذلك، قد تكون للسهولة تكلفة لا ننتبه إليها، وهي التراجع التدريجي في الصبر والقدرة على التركيز المستمر. عندما يبدو أن كل سؤال يتطلب إجابة فورية، فقد يصبح الناس أقل استعداداً لتحمل عدم اليقين أو التعمق في الأفكار الصعبة. لا يعني ذلك ضرورة رفض التكنولوجيا، بل إن الاستفادة منها تتحقق بصورة أفضل عندما نوازن سهولتها بالتفكير المتأني، بحيث تدعم الأدوات الحكم البشري بدلاً من أن تحل محله.",
+words:[["erosion","تآكل أو تراجع تدريجي","The erosion of trust takes time."],["sustained","مستمر","Reading requires sustained attention."],["deliberate","متعمد ومتأنٍ","She made a deliberate choice."]],
+q:[
+{q:"What cost of convenience does the passage describe?",a:["Higher transport costs","Reduced patience and attention","Less access to information"],c:1},
+{q:"Does the author argue that technology should be rejected?",a:["Yes, completely","Only in schools","No, it should be used thoughtfully"],c:2},
+{q:"What does 'replacing it' refer to in the final sentence?",a:["Replacing human judgment","Replacing the internet","Replacing communication"],c:0}
+]},
+{
+id:"c2_1",level:"C2",title:"The Letters Never Sent",
+en:"For decades, Elias kept a bundle of letters in the bottom drawer of his desk. Each had been written during a different turning point in his life, yet none had ever been posted. Some expressed gratitude he had been too proud to voice; others contained apologies that had arrived too late to alter the course of events. On quiet evenings, he would unfold the pages and marvel at how confidently his younger self had mistaken certainty for wisdom. He had once believed that withholding difficult words could spare people pain. Only much later did he understand that silence, too, leaves its mark, sometimes more indelibly than speech. When he finally opened the drawer for the last time, he did not destroy the letters. He placed them in a box, not as a monument to regret, but as a reminder that honesty is most meaningful when it is still possible to act upon it.",
+ar:"على مدى عقود، احتفظ إلياس بحزمة من الرسائل في الدرج السفلي لمكتبه. كُتبت كل رسالة عند منعطف مختلف من حياته، ومع ذلك لم تُرسل أي منها. عبّرت بعض الرسائل عن امتنان كان كبرياؤه يمنعه من قوله، بينما تضمنت أخرى اعتذارات جاءت متأخرة جداً لتغيير مجرى الأحداث. في الأمسيات الهادئة، كان يفتح الصفحات ويتعجب من مدى ثقة نفسه الأصغر سناً حين خلط بين اليقين والحكمة. كان يعتقد سابقاً أن كتمان الكلمات الصعبة قد يجنب الناس الألم. لكنه فهم بعد زمن طويل أن الصمت يترك أثره أيضاً، وأحياناً يكون أثره أعمق من الكلام. وعندما فتح الدرج للمرة الأخيرة، لم يمزق الرسائل؛ بل وضعها في صندوق، لا تخليداً للندم، بل تذكيراً بأن الصراحة تكون أكثر قيمة عندما لا يزال بالإمكان التصرف بناءً عليها.",
+words:[["turning point","منعطف مهم","Graduation was a turning point in her life."],["withhold","يكتم أو يحجب","He chose to withhold his opinion."],["indelibly","بصورة لا تُمحى","The experience was indelibly marked in her memory."]],
+q:[
+{q:"Why had Elias kept the letters?",a:["He planned to sell them","They recorded important feelings and moments","He had forgotten how to post them"],c:1},
+{q:"What did Elias learn about silence?",a:["It always protects people","It has no consequences","It can leave lasting effects"],c:2},
+{q:"Why did he keep the letters?",a:["As a reminder about honesty and action","To send every letter immediately","To forget his past completely"],c:0}
+]},
+{
+id:"c2_2",level:"C2",title:"The Measure of a Life",
+en:"In the town where Amira grew up, people tended to measure achievement by what could be displayed: the title on a door, the size of a house, or the recognition attached to a name. For years, she accepted these measures without examining them. Only after volunteering at a small community centre did she begin to question their adequacy. There, she met people whose quiet generosity had transformed the lives of neighbours who might otherwise have gone unnoticed. Their influence could not be captured in a certificate or reduced to a public accolade. Amira came to understand that a meaningful life need not be conspicuous; its significance may lie in the steady, largely unseen work of making things better for others.",
+ar:"في البلدة التي نشأت فيها أميرة، اعتاد الناس قياس النجاح بما يمكن عرضه: اللقب المكتوب على الباب، أو حجم المنزل، أو التقدير المرتبط بالاسم. ولسنوات، قبلت هذه المقاييس دون أن تتساءل عنها. لكن بعد تطوعها في مركز مجتمعي صغير، بدأت تشك في كفايتها. هناك التقت بأشخاص غيّر عطاؤهم الهادئ حياة جيران ربما لم يكن أحد لينتبه إليهم. لم يكن بالإمكان تلخيص تأثيرهم في شهادة أو اختزاله في تكريم علني. أدركت أميرة أن الحياة ذات المعنى لا تحتاج إلى أن تكون لافتة للأنظار؛ فقد تكمن قيمتها في العمل المستمر الذي لا يراه معظم الناس، والذي يجعل حياة الآخرين أفضل.",
+words:[["adequacy","الكفاية","We questioned the adequacy of the plan."],["conspicuous","بارز أو لافت للأنظار","His absence was conspicuous."],["accolade","تكريم أو إشادة","She received an accolade for her work."]],
+q:[
+{q:"What did people in Amira's town value?",a:["Only private kindness","Visible signs of achievement","Living without recognition"],c:1},
+{q:"What changed Amira's perspective?",a:["Volunteering at a community centre","Winning a competition","Moving to another country"],c:0},
+{q:"What is the central message?",a:["Achievement requires public praise","Only wealthy people can help","Quiet contributions can give life meaning"],c:2}
+]}
+];
+
+function saved(k,d=""){try{return localStorage.getItem(k)??d}catch(e){return d}}
+function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+let currentStory=null, storyAnswers={},storyScore={},wordIndex=0;
+
+function renderStories(){
+const level=document.getElementById("level").value;
+const list=document.getElementById("storyList");
+list.innerHTML="";
+const filtered=stories.filter(s=>s.level===level);
+if(!filtered.length){list.textContent="No stories available yet.";return;}
+filtered.forEach(s=>{
+const b=document.createElement("button");
+b.className="secondary";
+b.textContent=(saved("done_"+s.id)==="yes"?"✓ ":"📖 ")+s.title;
+b.onclick=()=>openStory(s.id);
+list.appendChild(b);
+});
+}
+
+function openStory(id){
+currentStory=stories.find(s=>s.id===id);
+const s=currentStory;
+const reader=document.getElementById("reader");
+reader.classList.remove("hidden");
+document.getElementById("storyContent").innerHTML=
+'<span class="pill">'+s.level+'</span><h2>'+s.title+'</h2>'+
+'<h3>📖 Read in English</h3><p id="storyEnglish" class="story"></p>'+
+'<button id="translationButton" class="secondary" onclick="toggleTranslation()">Show Arabic Translation / إظهار الترجمة</button>'+
+'<p id="storyArabic" class="translation hidden"></p>'+
+'<h3>📝 New Words</h3><div id="storyWords"></div>'+
+'<h3>🎯 Comprehension Questions</h3><div id="storyQuestions"></div>'+
+'<div id="storyResult"></div>'+
+'<button onclick="speak(currentStory.en)">🔊 Listen to Story</button>';
+document.getElementById("storyEnglish").textContent=s.en;
+document.getElementById("storyArabic").textContent=s.ar;
+s.words.forEach(w=>{
+const d=document.createElement("div");d.className="word";
+const b=document.createElement("b");b.textContent=w[0];
+const meaning=document.createElement("p");meaning.textContent=w[1];
+const example=document.createElement("p");example.textContent="Example: "+w[2];
+const audio=document.createElement("button");audio.className="secondary";audio.textContent="🔊 Hear Word";audio.onclick=()=>speak(w[0]);
+d.append(b,meaning,example,audio);
+document.getElementById("storyWords").appendChild(d);
+});
+renderStoryQuestions();
+reader.scrollIntoView({behavior:"smooth"});
+}
+
+function toggleTranslation(){
+const ar=document.getElementById("storyArabic");
+ar.classList.toggle("hidden");
+document.getElementById("translationButton").textContent=
+ar.classList.contains("hidden")?"Show Arabic Translation / إظهار الترجمة":"Hide Arabic Translation / إخفاء الترجمة";
+}
+
+function renderStoryQuestions(){
+const box=document.getElementById("storyQuestions");
+box.innerHTML="";
+storyAnswers[currentStory.id]=[];
+storyScore[currentStory.id]=0;
+currentStory.q.forEach((q,qi)=>{
+const card=document.createElement("div");card.className="card";
+const title=document.createElement("b");title.textContent=(qi+1)+". "+q.q;card.appendChild(title);
+q.a.forEach((answer,ai)=>{
+const b=document.createElement("button");b.className="option";b.textContent=String.fromCharCode(65+ai)+". "+answer;
+b.onclick=()=>{
+if(storyAnswers[currentStory.id][qi]!==undefined)return;
+storyAnswers[currentStory.id][qi]=ai;
+card.querySelectorAll("button").forEach((x,i)=>{x.disabled=true;if(i===q.c)x.classList.add("correct")});
+const feedback=document.createElement("p");
+if(ai===q.c){storyScore[currentStory.id]++;feedback.textContent="Correct! ✓";}
+else{b.classList.add("wrong");feedback.textContent="Correct answer: "+q.a[q.c];}
+card.appendChild(feedback);
+if(storyAnswers[currentStory.id].filter(x=>x!==undefined).length===currentStory.q.length)finishStory();
+};
+card.appendChild(b);
+});
+box.appendChild(card);
+});
+}
+
+function finishStory(){
+const s=currentStory,score=storyScore[s.id];
+store("done_"+s.id,"yes");
+store("score_"+s.id,score+"/"+s.q.length);
+document.getElementById("storyResult").innerHTML=
+'<div class="word"><h3>🎉 Story completed!</h3><p>Your score: '+score+' / '+s.q.length+'</p><p>'+(score===s.q.length?"Excellent work! 🌟":"Good effort! Read again and keep practising.")+'</p></div>';
+renderStories();showProgress();
+}
+
+/* Shadowing */
+const shadowingSentences = {
+"A1":[
+{en:"Hello, nice to meet you.",ar:"مرحباً، يسعدني لقاؤك."},
+{en:"I like learning English.",ar:"أنا أحب تعلم اللغة الإنجليزية."},
+{en:"Where is the train station?",ar:"أين تقع محطة القطار؟"}],
+"A2":[
+{en:"I want to speak English confidently.",ar:"أريد أن أتحدث الإنجليزية بثقة."},
+{en:"We decided to go to the park together.",ar:"قررنا الذهاب إلى الحديقة معاً."},
+{en:"She works as a teacher at a local school.",ar:"هي تعمل كمعلمة في مدرسة محلية."}],
+"B1":[
+{en:"Consistency is key to mastering any language.",ar:"الاستمرارية هي المفتاح لإتقان أي لغة."},
+{en:"He explained the instructions very clearly.",ar:"شرح التعليمات بوضوح شديد."},
+{en:"I try to learn five new vocabulary words each day.",ar:"أحاول تعلم خمس كلمات جديدة كل يوم."}],
+"B2":[
+{en:"Effective communication requires active listening skills.",ar:"التواصل الفعال يتطلب مهارات استماع نشطة."},
+{en:"Despite the bad weather, the event went smoothly.",ar:"على الرغم من سوء الأحوال الجوية، سارت الفعالية بسلاسة."},
+{en:"She handled the complex problem with great composure.",ar:"تعاملت مع المشكلة المعقدة بهدوء تام."}],
+"C1":[
+{en:"Critical thinking allows us to analyze arguments objectively.",ar:"التفكير الناقد يتيح لنا تحليل الحجج بموضوعية."},
+{en:"His persuasive speech deeply moved the audience.",ar:"خطابه المقنع أثر في الجمهور بشكل عميق."},
+{en:"Technological advancements have reshaped global communication.",ar:"التطورات التكنولوجية أعادت تشكيل التواصل العالمي."}],
+"C2":[
+{en:"The nuances of literary devices enrich textual analysis.",ar:"دقائق الأساليب البلاغية تثري التحليل النصي."},
+{en:"Silence can often be as eloquent as spoken words.",ar:"يمكن أن يكون الصمت في كثير من الأحيان بليغاً تماماً مثل الكلمات."},
+{en:"True wisdom lies in discerning truth from perception.",ar:"الحكمة الحقيقية تكمن في تمييز الحقيقة عن الإدراك الظاهري."}]
+};
+
+let shadowIndex=0;
+function changeShadowLevel(){shadowIndex=0;updateShadowSentence();}
+function nextShadowSentence(){
+const level=document.getElementById("shadowLevel").value;
+shadowIndex=(shadowIndex+1)%shadowingSentences[level].length;
+updateShadowSentence();
+}
+function updateShadowSentence(){
+const level=document.getElementById("shadowLevel").value;
+const list=shadowingSentences[level];
+const item=list[shadowIndex];
+document.getElementById("shadowText").textContent=item.en;
+document.getElementById("shadowTranslation").textContent=item.ar;
+document.getElementById("shadowCounter").textContent=(shadowIndex+1)+" / "+list.length;
+}
+
+let mediaRecorder=null,audioChunks=[];
+function recMsg(t){document.getElementById("recordStatus").textContent=t;}
+function showRecFallback(msg){
+recMsg(msg);
+if(document.getElementById("recFile"))return;
+const l=document.createElement("label");l.className="small";l.id="recFallback";
+l.appendChild(document.createElement("br"));
+l.appendChild(document.createTextNode("Or record with your phone recorder: "));
+const i=document.createElement("input");i.type="file";i.accept="audio/*";i.id="recFile";i.setAttribute("capture","microphone");
+i.onchange=()=>{const f=i.files[0];if(!f)return;const a=document.getElementById("recordedAudio");a.src=URL.createObjectURL(f);a.classList.remove("hidden");recMsg("✅ Recording loaded. Press play to listen.");};
+l.appendChild(i);
+document.getElementById("recordStatus").after(l);
+}
+function recordVoice(){
+const btn=document.getElementById("recBtn");
+const audio=document.getElementById("recordedAudio");
+if(mediaRecorder&&mediaRecorder.state==="recording"){mediaRecorder.stop();return;}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==="undefined"){
+showRecFallback("Recording is not supported inside this browser.");return;
+}
+navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{
+let opts={};
+["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"].some(t=>{
+if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)){opts={mimeType:t};return true;}
+return false;
+});
+mediaRecorder=new MediaRecorder(stream,opts);
+audioChunks=[];
+mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)audioChunks.push(e.data);};
+mediaRecorder.onstop=()=>{
+const blob=new Blob(audioChunks,{type:mediaRecorder.mimeType||"audio/webm"});
+audio.src=URL.createObjectURL(blob);
+audio.classList.remove("hidden");
+stream.getTracks().forEach(t=>t.stop());
+btn.textContent="🎙️ Record My Voice";
+recMsg("✅ Recording saved. Press play to listen to yourself.");
+};
+mediaRecorder.start();
+btn.textContent="⏹️ Stop Recording";
+recMsg("🎙️ Recording... press the button again to stop.");
+}).catch(err=>{
+showRecFallback("Microphone is blocked inside this app ("+(err&&err.name?err.name:"unknown")+"). Open this page in Chrome and tap Allow when it asks for the microphone. [page: "+location.protocol+"//"+location.host+" | secure: "+(window.isSecureContext?"yes":"no")+"]");
+});
+}
+
+const words=[
+["Improve","يُحسّن","I want to improve my English."],
+["Confident","واثق","I feel confident when I practise."],
+["Usually","عادةً","I usually study in the evening."],
+["Although","على الرغم من","Although it was late, I continued."],
+["Opportunity","فرصة","This is a good opportunity to learn."],
+["Careful","حذر","Be careful when you cross the road."],
+["Decide","يقرر","I decided to read every day."],
+["Explain","يشرح","Can you explain this word?"],
+["Journey","رحلة","Learning English is a journey."],
+["Achieve","يحقق","You can achieve your goals."]
+];
+
+function renderWord(){
+const pool=getVocabPool();const w=pool[wordIndex%pool.length];
+document.getElementById("dailyWord").innerHTML="";
+const d=document.createElement("div");d.className="word";
+const h=document.createElement("h3");h.textContent=w[0];
+const m=document.createElement("p");m.textContent=w[1];
+const e=document.createElement("p");e.textContent="Example: "+w[2];
+const b=document.createElement("button");b.textContent="🔊 Hear Word";b.onclick=()=>speak(w[0]);
+const c=document.createElement("p");c.className="small";c.textContent=((wordIndex%pool.length)+1)+" / "+pool.length;
+d.append(h,m,e,b,c);document.getElementById("dailyWord").appendChild(d);
+}
+function nextWord(){wordIndex=(wordIndex+1)%getVocabPool().length;renderWord()}
+
+/* Audio (online first, device voice as fallback) */
+const ttsEl=new Audio();
+let speakToken=0;
+function toast(msg){
+let d=document.getElementById("toast");
+if(!d){d=document.createElement("div");d.id="toast";d.style.cssText="position:fixed;bottom:20px;left:15px;right:15px;background:#263c70;color:#fff;padding:12px;border-radius:12px;text-align:center;z-index:99";document.body.appendChild(d);}
+d.textContent=msg;d.style.display="block";
+clearTimeout(d._t);d._t=setTimeout(()=>{d.style.display="none";},4000);
+}
+function ttsUrl(t,c){return "https://translate.google.com/translate_tts?ie=UTF-8&client="+c+"&tl=en&q="+encodeURIComponent(t);}
+function speak(text){
+const my=++speakToken;
+ttsEl.pause();
+try{speechSynthesis.cancel();}catch(e){}
+const sentences=String(text).match(/[^.!?]+[.!?"”]*/g)||[String(text)];
+const parts=[];let cur="";
+sentences.forEach(s=>{
+s=s.trim();if(!s)return;
+if(s.length>170){if(cur){parts.push(cur);cur="";}(s.match(/.{1,170}(\s|$)/g)||[]).forEach(x=>parts.push(x.trim()));return;}
+if((cur+" "+s).trim().length<=170)cur=(cur+" "+s).trim();else{parts.push(cur);cur=s;}
+});
+if(cur)parts.push(cur);
+let i=0,tries=0,attempt=0;
+const device=()=>{
+if("speechSynthesis" in window&&"SpeechSynthesisUtterance" in window){
+const u=new SpeechSynthesisUtterance(parts.slice(i).join(" "));
+u.lang="en-US";u.rate=0.85;speechSynthesis.speak(u);
+}else{toast("تعذر تشغيل الصوت، تأكد من الإنترنت ثم حاول مرة أخرى.");}
+};
+const play=()=>{
+if(my!==speakToken||i>=parts.length)return;
+if(!navigator.onLine)return device();
+const at=++attempt;
+const fail=()=>{
+if(my!==speakToken||at!==attempt)return;
+attempt++;tries++;
+if(tries<=3)setTimeout(play,500);else device();
+};
+ttsEl.onended=()=>{if(my!==speakToken||at!==attempt)return;attempt++;i++;tries=0;play();};
+ttsEl.onerror=fail;
+ttsEl.src=ttsUrl(parts[i],tries%2===0?"tw-ob":"gtx");
+const p=ttsEl.play();
+if(p&&p.catch)p.catch(fail);
+};
+play();
+}
+
+const questions=[
+{q:"I ___ a student.",a:["am","is","are"],c:0,l:"A1"},
+{q:"She ___ to school every day.",a:["go","goes","going"],c:1,l:"A1"},
+{q:"They ___ playing football now.",a:["is","am","are"],c:2,l:"A1"},
+{q:"What is the opposite of 'hot'?",a:["Cold","Tall","Fast"],c:0,l:"A1"},
+{q:"Yesterday, I ___ my friend.",a:["see","saw","seen"],c:1,l:"A2"},
+{q:"I have lived here ___ 2020.",a:["for","since","during"],c:1,l:"A2"},
+{q:"If it rains, we ___ at home.",a:["will stay","stayed","staying"],c:0,l:"A2"},
+{q:"She is interested ___ music.",a:["on","at","in"],c:2,l:"A2"},
+{q:"If I had more time, I ___ travel.",a:["will","would","can"],c:1,l:"B1"},
+{q:"The letter ___ yesterday.",a:["sent","was sent","is sending"],c:1,l:"B1"},
+{q:"Despite ___ tired, he continued.",a:["being","was","be"],c:0,l:"B1"},
+{q:"The meeting was postponed ___ the storm.",a:["due to","although","unless"],c:0,l:"B2"},
+{q:"Her explanation was clear and ___.",a:["persuade","persuasive","persuasion"],c:1,l:"B2"},
+{q:"The findings were ___ with earlier research.",a:["consistent","consist","consistency"],c:0,l:"C1"},
+{q:"Rarely ___ such a compelling argument.",a:["I have heard","have I heard","I heard"],c:1,l:"C1"}
+];
+
+let testOrder=[],testPos=0,testScore=0,testAnswers=[];
+
+function startTest(){
+testOrder=questions.map((_,i)=>i).sort(()=>Math.random()-.5);
+testPos=0;testScore=0;testAnswers=[];renderTestQuestion();
+}
+
+function renderTestQuestion(){
+const q=questions[testOrder[testPos]],area=document.getElementById("testArea");
+area.innerHTML='<p>Question '+(testPos+1)+' of '+testOrder.length+'</p><div class="progress"><div style="width:'+(testPos/testOrder.length*100)+'%"></div></div><h3>'+q.q+'</h3><div id="testOptions"></div><p id="testFeedback"></p><button id="testNext" disabled onclick="nextTestQuestion()">'+(testPos===testOrder.length-1?"See Result":"Next Question")+'</button>';
+q.a.forEach((a,i)=>{
+const b=document.createElement("button");b.className="option";b.textContent=a;
+b.onclick=()=>{
+if(testAnswers[testPos]!==undefined)return;
+testAnswers[testPos]=i;
+document.querySelectorAll("#testOptions button").forEach((x,j)=>{x.disabled=true;if(j===q.c)x.classList.add("correct")});
+if(i===q.c){testScore++;document.getElementById("testFeedback").textContent="Correct! ✓";}
+else{b.classList.add("wrong");document.getElementById("testFeedback").textContent="Correct answer: "+q.a[q.c];}
+document.getElementById("testNext").disabled=false;
+};
+document.getElementById("testOptions").appendChild(b);
+});
+}
+
+function nextTestQuestion(){
+testPos++;
+if(testPos<testOrder.length){renderTestQuestion();return;}
+const by={A1:0,A2:0,B1:0,B2:0,C1:0};
+testOrder.forEach((id,i)=>{if(testAnswers[i]===questions[id].c)by[questions[id].l]++});
+let level="A1";
+if(by.A1>=3)level="A2";
+if(by.A1>=3&&by.A2>=2)level="B1";
+if(by.A1>=3&&by.A2>=2&&by.B1>=2)level="B2";
+if(by.A1>=3&&by.A2>=2&&by.B1>=2&&by.B2>=1&&by.C1>=1)level="C1";
+store("test_score",testScore+"/15");store("test_level",level);
+document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+testScore+' / 15</p><p>Estimated level: <b>'+level+'</b></p>';
+showProgress();
+}
+
+function showProgress(){
+const area=document.getElementById("progressArea");
+const tScore=saved("test_score","Not taken");
+const tLevel=saved("test_level","Not assessed");
+area.innerHTML='<div class="card"><p><b>Level Test Score:</b> '+tScore+'</p><p><b>Estimated Level:</b> '+tLevel+'</p></div>';
+}
+
+(function () {
+
+/* ---------- 1) Offline shadowing sentences (en|ar), added to each level ---------- */
+const SENT = {
+A1: `Good morning, how are you?|صباح الخير، كيف حالك؟
+My name is Ali.|اسمي علي.
+I am from Sudan.|أنا من السودان.
+This is my book.|هذا كتابي.
+I have two brothers.|لدي أخوان.
+She is my friend.|هي صديقتي.
+I drink water every day.|أشرب الماء كل يوم.
+Can I have some tea, please?|هل يمكنني الحصول على شاي، من فضلك؟
+The weather is hot today.|الجو حار اليوم.
+Thank you very much.|شكراً جزيلاً.`,
+A2: `I usually wake up at six o'clock.|عادةً أستيقظ في الساعة السادسة.
+Can you help me with this exercise?|هل يمكنك مساعدتي في هذا التمرين؟
+We are going to visit my uncle tomorrow.|سنزور عمي غداً.
+I didn't understand the question.|لم أفهم السؤال.
+She has been studying for two hours.|هي تدرس منذ ساعتين.
+Which bus goes to the city centre?|أي حافلة تذهب إلى وسط المدينة؟
+I would like a glass of juice.|أود كوباً من العصير.
+It was raining when we left the house.|كانت تمطر عندما غادرنا المنزل.
+My phone is cheaper than yours.|هاتفي أرخص من هاتفك.
+Please speak more slowly.|من فضلك تحدث ببطء أكثر.`,
+B1: `I have been learning English for three years.|أتعلم الإنجليزية منذ ثلاث سنوات.
+If you practise every day, you will improve.|إذا تدربت كل يوم، فسوف تتحسن.
+He suggested meeting at the library.|اقترح أن نلتقي في المكتبة.
+I'm not used to waking up so early.|لست معتاداً على الاستيقاظ مبكراً هكذا.
+They managed to finish the project on time.|تمكنوا من إنهاء المشروع في الوقت المحدد.
+Could you tell me how to get to the airport?|هل يمكنك أن تخبرني كيف أصل إلى المطار؟
+I wish I had more free time.|أتمنى لو كان لدي وقت فراغ أكثر.
+The film was better than I expected.|كان الفيلم أفضل مما توقعت.
+She asked me whether I was ready.|سألتني إن كنت مستعداً.
+It takes about an hour to get there.|يستغرق الوصول إلى هناك حوالي ساعة.`,
+B2: `Had I known about the problem, I would have helped.|لو علمت بالمشكلة لساعدت.
+The company is considering expanding abroad.|تفكر الشركة في التوسع في الخارج.
+Not only did he apologise, but he also offered to pay.|لم يعتذر فحسب، بل عرض أيضاً أن يدفع.
+We need to come up with a practical solution.|نحتاج إلى التوصل إلى حل عملي.
+The results were far from satisfactory.|كانت النتائج بعيدة عن أن تكون مرضية.
+She is said to be one of the best engineers in the country.|يُقال إنها من أفضل المهندسات في البلاد.
+I'd rather you didn't tell anyone about this.|أفضّل ألا تخبر أحداً بهذا.
+Little by little, he gained the trust of his team.|شيئاً فشيئاً، كسب ثقة فريقه.
+The government has introduced new measures to reduce pollution.|اتخذت الحكومة إجراءات جديدة للحد من التلوث.
+Whatever you decide, I will support you.|مهما قررت، سأدعمك.`,
+C1: `It is essential that every voice be heard.|من الضروري أن يُسمع كل صوت.
+Scarcely had the meeting begun when the power failed.|ما إن بدأ الاجتماع حتى انقطعت الكهرباء.
+The proposal, however well intentioned, overlooks several practical obstacles.|المقترح، مهما كانت نيته حسنة، يغفل عدة عقبات عملية.
+She has a remarkable knack for simplifying complex ideas.|لديها موهبة لافتة في تبسيط الأفكار المعقدة.
+Only by working together can we overcome this challenge.|لن نتجاوز هذا التحدي إلا بالعمل معاً.
+The evidence points to a more nuanced conclusion.|تشير الأدلة إلى استنتاج أكثر دقة وتعقيداً.
+He was reluctant to commit himself to a definite answer.|كان متردداً في الالتزام بإجابة قاطعة.
+The policy has sparked a heated debate among economists.|أثارت السياسة جدلاً حاداً بين الاقتصاديين.
+Rather than blaming others, she took full responsibility.|بدلاً من لوم الآخرين، تحملت المسؤولية كاملة.
+What matters most is not speed but accuracy.|ما يهم أكثر ليس السرعة بل الدقة.`,
+C2: `Her argument, though elegant, rests on a questionable premise.|حجتها، رغم أناقتها، تقوم على فرضية مشكوك فيها.
+The novel's ambiguity invites, rather than resolves, interpretation.|غموض الرواية يدعو إلى التأويل بدلاً من أن يحسمه.
+Were it not for his persistence, the project would have collapsed.|لولا إصراره لانهار المشروع.
+Such subtleties are easily lost in translation.|مثل هذه الدقائق يسهل أن تضيع في الترجمة.
+He wore his erudition lightly, never seeking to impress.|كان يحمل سعة علمه بخفة، ولا يسعى إلى إبهار أحد.
+The tension between liberty and security is hardly new.|التوتر بين الحرية والأمن ليس جديداً على الإطلاق.
+Notwithstanding the setbacks, the team pressed on.|رغم الانتكاسات، واصل الفريق المسير.
+Language shapes thought as much as it expresses it.|اللغة تشكّل التفكير بقدر ما تعبّر عنه.
+It would be disingenuous to claim otherwise.|سيكون من غير الصادق ادعاء غير ذلك.
+Genuine fluency is less about vocabulary than about intuition.|الطلاقة الحقيقية تتعلق بالحدس أكثر مما تتعلق بالمفردات.`
+};
+Object.keys(SENT).forEach(L => {
+  SENT[L].split("\n").forEach(line => {
+    const p = line.split("|");
+    if (p.length === 2) shadowingSentences[L].push({ en: p[0].trim(), ar: p[1].trim() });
+  });
+});
+
+/* ---------- 2) Offline stories: [level, title, en, ar, question, "a;b;c", correctIndex] ---------- */
+const ST = [
+["A1","My Family","I have a small family. My father is a doctor. My mother is a teacher. I have one sister. We eat dinner together every evening.","عائلتي صغيرة. أبي طبيب. أمي معلمة. لدي أخت واحدة. نتناول العشاء معاً كل مساء.","What is the father's job?","Teacher;Doctor;Driver",1],
+["A2","At the Market","On Friday, Huda went to the market to buy fruit. The oranges were fresh, but they were expensive. She asked the seller for a lower price, and he agreed. She went home happy.","يوم الجمعة، ذهبت هدى إلى السوق لشراء الفاكهة. كان البرتقال طازجاً لكنه غالٍ. طلبت من البائع سعراً أقل فوافق. عادت إلى المنزل سعيدة.","Why did Huda ask for a lower price?","The oranges were expensive;She was late;She did not like fruit",0],
+["B1","The Lost Wallet","Karim found a wallet on the street. Instead of keeping the money, he looked for an ID card and found the owner's phone number. He called the man, who thanked him warmly. Karim felt that doing the right thing was its own reward.","وجد كريم محفظة في الشارع. وبدلاً من الاحتفاظ بالمال، بحث عن بطاقة هوية ووجد رقم هاتف صاحبها. اتصل بالرجل الذي شكره بحرارة. شعر كريم أن فعل الصواب مكافأة في حد ذاته.","What did Karim do first?","Kept the money;Looked for an ID card;Went to the police",1],
+["B2","The Quiet Neighbour","Hana never spoke to her neighbour, assuming he preferred to be alone. When a power cut left the building in darkness, he knocked on her door and offered candles to everyone on the floor. The small gesture changed her view completely, and they have been friends ever since.","لم تكن هناء تتحدث مع جارها، ظناً منها أنه يفضّل الوحدة. وعندما انقطعت الكهرباء وغرق المبنى في الظلام، طرق بابها وعرض الشموع على جميع سكان الطابق. غيّر هذا التصرف البسيط نظرتها تماماً، ومنذ ذلك الحين وهما صديقان.","What did the neighbour offer?","Candles;Food;A phone",0],
+["C1","The Weight of Words","A careless remark can linger in someone's memory far longer than the speaker imagines. Tariq learned this when a colleague recalled, years later, a casual comment he had made about her presentation. He had forgotten it entirely; she had not. Since then, he has chosen his words with greater care.","قد تبقى عبارة غير مدروسة في ذاكرة شخص ما أطول بكثير مما يتخيل قائلها. تعلّم طارق ذلك حين تذكرت زميلة، بعد سنوات، تعليقاً عابراً قاله عن عرضها التقديمي. كان قد نسيه تماماً، أما هي فلم تنسه. ومنذ ذلك الحين يختار كلماته بعناية أكبر.","What did Tariq learn?","Words can have lasting effects;Presentations are unimportant;Memory is unreliable",0],
+["C2","The Unfinished Manuscript","Decades after the writer's death, an unfinished manuscript surfaced in a dusty trunk. Scholars debated whether it should be published, since its author had never sanctioned its release. Some argued that literature belongs to posterity; others insisted that consent, even posthumous, deserves respect. The dispute remains unresolved, illustrating how art and ethics are seldom easily reconciled.","بعد عقود من وفاة الكاتب، ظهرت مخطوطة غير مكتملة في صندوق مغبر. ناقش الباحثون ما إذا كان ينبغي نشرها، إذ لم يأذن مؤلفها بإصدارها. رأى بعضهم أن الأدب ملك للأجيال القادمة، بينما أصرّ آخرون على أن الموافقة، حتى بعد الوفاة، تستحق الاحترام. ولا يزال الخلاف قائماً، مما يبيّن أن الفن والأخلاق نادراً ما يتصالحان بسهولة.","Why was publication debated?","The author had not approved it;It was too short;It was written in code",0]
+];
+ST.forEach((s, i) => stories.push({
+  id: "off_" + s[0].toLowerCase() + "_" + i, level: s[0], title: s[1], en: s[2], ar: s[3],
+  words: [], q: [{ q: s[4], a: s[5].split(";"), c: s[6] }]
+}));
+
+})();
+
+
+/* A1 - batch 2 */
+(function(){
+`What is your name?|ما اسمك؟
+I am a student.|أنا طالب.
+He is my brother.|هو أخي.
+We live in a big house.|نحن نعيش في بيت كبير.
+I like apples and bananas.|أحب التفاح والموز.
+The cat is on the chair.|القطة على الكرسي.
+She has a red bag.|لديها حقيبة حمراء.
+It is time for lunch.|حان وقت الغداء.
+I go to school by bus.|أذهب إلى المدرسة بالحافلة.
+My mother cooks dinner.|أمي تطبخ العشاء.
+Where is the bathroom?|أين الحمام؟
+I don't like coffee.|لا أحب القهوة.
+Open the door, please.|افتح الباب، من فضلك.
+What time is it?|كم الساعة؟
+They are at the park.|هم في الحديقة.
+I have a new phone.|لدي هاتف جديد.
+The water is cold.|الماء بارد.
+My father works in a bank.|أبي يعمل في بنك.
+Do you speak English?|هل تتحدث الإنجليزية؟
+I'm hungry.|أنا جائع.
+See you tomorrow.|أراك غداً.
+The sun is bright today.|الشمس ساطعة اليوم.
+He plays football every Friday.|يلعب كرة القدم كل جمعة.
+This room is very small.|هذه الغرفة صغيرة جداً.
+I read a book at night.|أقرأ كتاباً في الليل.
+How much is this?|بكم هذا؟
+My friends are kind.|أصدقائي لطفاء.
+Please sit down.|تفضل بالجلوس.
+I'm sorry, I'm late.|آسف، أنا متأخر.
+Goodbye, have a nice day.|إلى اللقاء، أتمنى لك يوماً جميلاً.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.A1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["A Day at the Park","Ali and his father go to the park on Friday. The weather is sunny. Ali plays football with his friends. His father sits under a tree and reads a newspaper. At noon, they eat sandwiches and drink juice. Then they go home.","يذهب علي وأبوه إلى الحديقة يوم الجمعة. الجو مشمس. يلعب علي كرة القدم مع أصدقائه. يجلس أبوه تحت شجرة ويقرأ جريدة. عند الظهر، يأكلان السندويتشات ويشربان العصير. ثم يعودان إلى البيت.","What does Ali play?",["Football","Tennis","Chess"],0],
+["The New Shirt","Yasir wants a new shirt. He goes to the shop with his mother. He likes a blue shirt. It is not expensive. His mother pays for it. Yasir is very happy.","يريد ياسر قميصاً جديداً. يذهب إلى المحل مع أمه. يعجبه قميص أزرق. ليس غالياً. تدفع أمه ثمنه. ياسر سعيد جداً.","What colour is the shirt?",["Red","Blue","Green"],1],
+["At the Doctor","Layla has a headache. Her mother takes her to the doctor. The doctor says, \"Drink water and rest.\" Layla goes home and sleeps. The next morning, she feels better.","تشعر ليلى بصداع. تأخذها أمها إلى الطبيب. يقول الطبيب: «اشربي الماء واستريحي.» تعود ليلى إلى البيت وتنام. في صباح اليوم التالي، تشعر بتحسن.","What does the doctor say?",["Drink water and rest","Go to school","Eat more sugar"],0]
+].forEach((s,i)=>stories.push({id:"off_a1_b2_"+i,level:"A1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* A1 - batch 3 */
+(function(){
+`I wake up at six.|أستيقظ في الساعة السادسة.
+I brush my teeth every morning.|أنظف أسناني كل صباح.
+We eat rice and fish.|نأكل الأرز والسمك.
+My sister is ten years old.|أختي عمرها عشر سنوات.
+The bus is late.|الحافلة متأخرة.
+I have a blue pen.|لدي قلم أزرق.
+He drinks milk every day.|يشرب الحليب كل يوم.
+The teacher is in the classroom.|المعلم في الفصل.
+It is cold in winter.|الجو بارد في الشتاء.
+I can swim.|أستطيع السباحة.
+Can you help me?|هل يمكنك مساعدتي؟
+She likes red flowers.|هي تحب الزهور الحمراء.
+We play in the garden.|نلعب في الحديقة.
+My grandfather is old.|جدي كبير في السن.
+I'm thirsty.|أنا عطشان.
+The shop is open.|المحل مفتوح.
+Today is Monday.|اليوم هو الاثنين.
+I walk to school.|أمشي إلى المدرسة.
+There is a book on the table.|يوجد كتاب على الطاولة.
+My house is near the market.|بيتي قريب من السوق.
+He is tall and strong.|هو طويل وقوي.
+I wash my hands before eating.|أغسل يدي قبل الأكل.
+They have a small car.|لديهم سيارة صغيرة.
+Welcome to my home.|أهلاً بك في بيتي.
+I don't understand.|لا أفهم.
+Please repeat that.|من فضلك أعد ما قلته.
+The baby is sleeping.|الطفل نائم.
+I love my family.|أحب عائلتي.
+The moon is beautiful tonight.|القمر جميل الليلة.
+Good night, sleep well.|تصبح على خير، نم جيداً.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.A1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["My Best Friend","My best friend is Hassan. He is twelve years old. He has a big smile. We go to school together. After school, we play football. I like Hassan very much.","صديقي المفضل هو حسن. عمره اثنا عشر عاماً. لديه ابتسامة كبيرة. نذهب إلى المدرسة معاً. بعد المدرسة نلعب كرة القدم. أحب حسن كثيراً.","How old is Hassan?",["Ten","Twelve","Fifteen"],1],
+["A Rainy Day","Today it is rainy. Noor stays at home. She drinks hot chocolate and reads a book. Her brother draws a picture. In the evening, the rain stops and they see a rainbow.","اليوم الجو ممطر. تبقى نور في البيت. تشرب شوكولاتة ساخنة وتقرأ كتاباً. يرسم أخوها صورة. في المساء يتوقف المطر ويريان قوس قزح.","What does Noor drink?",["Hot chocolate","Cold water","Tea"],0],
+["The Bakery","Tariq goes to the bakery every morning. He buys fresh bread for his family. The baker is a kind old man. He always says, \"Good morning!\" Tariq says thank you and walks home.","يذهب طارق إلى المخبز كل صباح. يشتري خبزاً طازجاً لعائلته. الخباز رجل كبير لطيف. يقول دائماً: «صباح الخير!» يشكره طارق ويمشي إلى البيت.","What does Tariq buy?",["Cake","Fresh bread","Biscuits"],1]
+].forEach((s,i)=>stories.push({id:"off_a1_b3_"+i,level:"A1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* A1 - batch 4 */
+(function(){
+`Is this your pen?|هل هذا قلمك؟
+Yes, it is.|نعم، هو كذلك.
+No, it isn't.|لا، ليس كذلك.
+My birthday is in May.|عيد ميلادي في شهر مايو.
+I eat breakfast at seven.|أتناول الفطور في الساعة السابعة.
+The children are happy.|الأطفال سعداء.
+She drinks orange juice.|هي تشرب عصير البرتقال.
+We have English class today.|لدينا حصة إنجليزي اليوم.
+I need a pencil.|أحتاج إلى قلم رصاص.
+The bird is in the tree.|الطائر على الشجرة.
+He wears a white shirt.|يرتدي قميصاً أبيض.
+I see a big dog.|أرى كلباً كبيراً.
+My room is clean.|غرفتي نظيفة.
+Let's go to the beach.|هيا نذهب إلى الشاطئ.
+The food is ready.|الطعام جاهز.
+I want some water.|أريد بعض الماء.
+She is a good cook.|هي طباخة ماهرة.
+We are happy today.|نحن سعداء اليوم.
+The lesson starts at nine.|يبدأ الدرس في الساعة التاسعة.
+He is my teacher.|هو معلمي.
+I like blue and green.|أحب الأزرق والأخضر.
+The market is busy.|السوق مزدحم.
+Turn left at the corner.|انعطف يساراً عند الزاوية.
+I have a headache.|أشعر بصداع.
+It is a sunny day.|إنه يوم مشمس.
+My brother is at work.|أخي في العمل.
+Thank you for your help.|شكراً على مساعدتك.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.A1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Library","Zainab goes to the library after school. It is quiet there. She finds a book about animals. She sits at a table and reads for one hour. Then she takes the book home.","تذهب زينب إلى المكتبة بعد المدرسة. المكان هادئ هناك. تجد كتاباً عن الحيوانات. تجلس إلى طاولة وتقرأ لمدة ساعة. ثم تأخذ الكتاب معها إلى البيت.","What book does Zainab find?",["A book about animals","A book about cooking","A book about cars"],0],
+["Dinner with Grandma","On Saturday, we visit my grandmother. She cooks chicken and rice. The food smells wonderful. We eat together and talk about our week. After dinner, Grandma tells us a short story.","يوم السبت نزور جدتي. تطبخ دجاجاً وأرزاً. رائحة الطعام رائعة. نأكل معاً ونتحدث عن أسبوعنا. بعد العشاء تحكي لنا جدتي قصة قصيرة.","What does Grandma cook?",["Fish and bread","Chicken and rice","Soup and salad"],1]
+].forEach((s,i)=>stories.push({id:"off_a1_b4_"+i,level:"A1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* A2 - batch 1 */
+(function(){
+`What did you do last weekend?|ماذا فعلت في عطلة نهاية الأسبوع الماضية؟
+I went to the cinema with my cousins.|ذهبت إلى السينما مع أبناء عمي.
+He is taller than his brother.|هو أطول من أخيه.
+I have never been to Cairo.|لم أذهب إلى القاهرة من قبل.
+How often do you exercise?|كم مرة تمارس الرياضة؟
+We should leave before it gets dark.|ينبغي أن نغادر قبل أن يحل الظلام.
+She is looking for her keys.|هي تبحث عن مفاتيحها.
+Do you want to join us for dinner?|هل تريد أن تنضم إلينا على العشاء؟
+The shop closes at eight o'clock.|يُغلق المحل في الساعة الثامنة.
+I'm going to study medicine.|سأدرس الطب.
+My brother is better at maths than I am.|أخي أفضل مني في الرياضيات.
+There wasn't any milk in the fridge.|لم يكن هناك حليب في الثلاجة.
+Can I borrow your pen for a minute?|هل يمكنني استعارة قلمك لدقيقة؟
+We have lived in this city for five years.|نعيش في هذه المدينة منذ خمس سنوات.
+You must wear a seat belt in the car.|يجب أن تربط حزام الأمان في السيارة.
+I forgot to bring my umbrella.|نسيت أن أحضر مظلتي.
+What are you doing this evening?|ماذا ستفعل هذا المساء؟
+The train leaves in ten minutes.|يغادر القطار بعد عشر دقائق.
+She sings very well.|هي تغني بشكل جيد جداً.
+I'll call you when I arrive.|سأتصل بك عندما أصل.
+This is the most interesting book I have read.|هذا أكثر كتاب ممتع قرأته.
+He doesn't have to work on Fridays.|ليس عليه أن يعمل أيام الجمعة.
+Could you open the window, please?|هل يمكنك فتح النافذة، من فضلك؟
+I was very tired, so I went to bed early.|كنت متعباً جداً، فنمت مبكراً.
+We met at a friend's wedding.|التقينا في حفل زفاف صديق.
+The restaurant was crowded last night.|كان المطعم مزدحماً ليلة أمس.
+I prefer tea to coffee.|أفضّل الشاي على القهوة.
+Don't forget to do your homework.|لا تنسَ أن تؤدي واجبك المنزلي.
+She travels to work by train.|هي تسافر إلى العمل بالقطار.
+It's important to drink enough water.|من المهم شرب كمية كافية من الماء.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.A2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Lost Key","Hamza arrived at his house in the evening, but he could not find his key. He looked in his bag and in his pockets, but it was not there. He called his sister, and she opened the door. She said, \"Your key is on the kitchen table!\" Hamza laughed. Now he always checks his pockets before leaving.","وصل حمزة إلى بيته في المساء، لكنه لم يجد مفتاحه. بحث في حقيبته وفي جيوبه، لكنه لم يكن هناك. اتصل بأخته ففتحت له الباب. قالت: «مفتاحك على طاولة المطبخ!» ضحك حمزة. وهو الآن يتفقد جيوبه دائماً قبل أن يخرج.","Where was the key?",["In his bag","On the kitchen table","In his pocket"],1],
+["A Birthday Surprise","Sana's birthday was on Thursday, and she thought everyone had forgotten. At school, her friends acted normal. When she came home, the lights were off. Suddenly, her family shouted, \"Happy birthday!\" There was a big chocolate cake on the table. Sana was surprised and very happy.","كان عيد ميلاد سناء يوم الخميس، وظنت أن الجميع نسوه. في المدرسة تصرف أصدقاؤها بشكل عادي. وعندما عادت إلى البيت كانت الأضواء مطفأة. فجأة صاحت عائلتها: «عيد ميلاد سعيد!» كانت هناك كعكة شوكولاتة كبيرة على الطاولة. فوجئت سناء وسعدت كثيراً.","How did Sana feel at the end?",["Angry","Surprised and happy","Tired"],1],
+["The Bus to the City","Khaled wanted to visit the city museum, but he did not know which bus to take. He asked a woman at the bus stop. She told him to take number twelve and get off after the bank. Khaled thanked her. Half an hour later, he arrived at the museum and bought a ticket.","أراد خالد زيارة متحف المدينة، لكنه لم يعرف أي حافلة يركب. سأل امرأة في موقف الحافلات. قالت له أن يركب الحافلة رقم اثني عشر وينزل بعد البنك. شكرها خالد. بعد نصف ساعة وصل إلى المتحف واشترى تذكرة.","Which bus did Khaled take?",["Number two","Number twelve","Number twenty"],1]
+].forEach((s,i)=>stories.push({id:"off_a2_b1_"+i,level:"A2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* A2 - batch 2 */
+(function(){
+`I'm afraid I can't come tonight.|أخشى أنني لا أستطيع الحضور الليلة.
+She asked me to wait outside.|طلبت مني أن أنتظر في الخارج.
+The weather was better yesterday.|كان الطقس أفضل أمس.
+I've just finished my homework.|لقد أنهيت واجبي للتو.
+Have you ever tried Chinese food?|هل جربت الطعام الصيني من قبل؟
+He used to live near the sea.|كان يعيش بالقرب من البحر.
+We're having a party on Saturday.|سنقيم حفلة يوم السبت.
+I'd like to book a table for two.|أود حجز طاولة لشخصين.
+There are many people in the square.|هناك كثير من الناس في الساحة.
+It's too expensive for me.|إنه غالٍ جداً بالنسبة لي.
+She's afraid of spiders.|هي تخاف من العناكب.
+How long does the journey take?|كم تستغرق الرحلة؟
+I think you should see a doctor.|أعتقد أنه يجب عليك زيارة الطبيب.
+He is good at drawing.|هو بارع في الرسم.
+They didn't go out because of the rain.|لم يخرجوا بسبب المطر.
+Let me introduce my friend.|دعني أعرّفك على صديقي.
+What's your favourite subject at school?|ما مادتك المفضلة في المدرسة؟
+I'm learning to drive.|أتعلم قيادة السيارة.
+You can pay by card or in cash.|يمكنك الدفع بالبطاقة أو نقداً.
+We watched a funny film last night.|شاهدنا فيلماً مضحكاً ليلة أمس.
+She's wearing a beautiful dress.|ترتدي فستاناً جميلاً.
+Is there a pharmacy near here?|هل توجد صيدلية قريبة من هنا؟
+I was born in a small village.|وُلدت في قرية صغيرة.
+He always arrives early.|هو يصل دائماً مبكراً.
+Would you like some more rice?|هل تريد مزيداً من الأرز؟
+My sister is getting married next month.|ستتزوج أختي الشهر القادم.
+Turn off the light when you leave.|أطفئ الضوء عندما تغادر.
+I haven't seen him since Monday.|لم أره منذ يوم الاثنين.
+It's a long way from here.|إنه بعيد من هنا.
+We enjoyed the trip very much.|استمتعنا بالرحلة كثيراً.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.A2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Football Match","Last Friday, Faisal's team played an important football match. The weather was hot, and the other team was strong. At first, Faisal's team was losing two to nothing. Then Faisal scored two goals in ten minutes. The game finished two to two, and everyone was proud of the team.","يوم الجمعة الماضي لعب فريق فيصل مباراة كرة قدم مهمة. كان الجو حاراً وكان الفريق الآخر قوياً. في البداية كان فريق فيصل متأخراً بهدفين دون مقابل. ثم سجل فيصل هدفين في عشر دقائق. انتهت المباراة بالتعادل اثنين لاثنين، وفخر الجميع بالفريق.","How did the match finish?",["Two to two","Two to nothing","Three to one"],0],
+["A Quiet Weekend","Rana usually has a busy week, so she decided to rest at the weekend. She stayed at home, watched a film, and cooked pasta for lunch. In the evening, she called her grandmother and talked for an hour. On Sunday night, she felt relaxed and ready for work.","عادةً يكون أسبوع رنا مزدحماً، لذلك قررت أن ترتاح في عطلة نهاية الأسبوع. بقيت في البيت وشاهدت فيلماً وطبخت معكرونة للغداء. في المساء اتصلت بجدتها وتحدثت معها ساعة. في ليلة الأحد شعرت بالراحة وبأنها جاهزة للعمل.","Why did Rana stay at home?",["She was ill","She wanted to rest","She had no money"],1],
+["The New Phone","Bilal wanted a new phone because his old one was very slow. He compared prices in three shops. The first shop was too expensive, and the second one had no blue phones. In the third shop, he found a good phone at a fair price. He bought it and thanked the seller.","أراد بلال هاتفاً جديداً لأن هاتفه القديم كان بطيئاً جداً. قارن الأسعار في ثلاثة محلات. كان المحل الأول غالياً جداً، ولم يكن في الثاني هواتف زرقاء. وفي المحل الثالث وجد هاتفاً جيداً بسعر معقول. اشتراه وشكر البائع.","Why did Bilal want a new phone?",["His old one was slow","He lost his phone","He liked the colour"],0]
+].forEach((s,i)=>stories.push({id:"off_a2_b2_"+i,level:"A2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* A2 - batch 3 */
+(function(){
+`What time does the film start?|متى يبدأ الفيلم؟
+I've lost my wallet.|لقد أضعت محفظتي.
+She'll be here in a few minutes.|ستكون هنا بعد بضع دقائق.
+Do you know where he lives?|هل تعرف أين يسكن؟
+I can't find my glasses anywhere.|لا أستطيع العثور على نظارتي في أي مكان.
+He promised to help me.|وعدني بأن يساعدني.
+We need to buy some bread and eggs.|نحتاج إلى شراء بعض الخبز والبيض.
+I'm much better today, thank you.|أنا أفضل بكثير اليوم، شكراً لك.
+The exam was easier than I expected.|كان الامتحان أسهل مما توقعت.
+She's been waiting for an hour.|إنها تنتظر منذ ساعة.
+Excuse me, is this seat free?|عفواً، هل هذا المقعد فارغ؟
+I always listen to music on the bus.|أستمع دائماً إلى الموسيقى في الحافلة.
+What a lovely surprise!|يا لها من مفاجأة جميلة!
+My cousin lives abroad.|ابن عمي يعيش في الخارج.
+You look tired today.|تبدو متعباً اليوم.
+I'll help you carry the bags.|سأساعدك في حمل الحقائب.
+The road was closed because of an accident.|كان الطريق مغلقاً بسبب حادث.
+He's learning to play the guitar.|يتعلم العزف على الغيتار.
+There's something wrong with my computer.|هناك خلل في حاسوبي.
+We usually have lunch at one.|عادةً نتناول الغداء في الساعة الواحدة.
+Could I speak to the manager, please?|هل يمكنني التحدث إلى المدير، من فضلك؟
+It's my turn now.|حان دوري الآن.
+I've already seen that film.|لقد شاهدت ذلك الفيلم بالفعل.
+She carried a heavy box upstairs.|حملت صندوقاً ثقيلاً إلى الطابق العلوي.
+Let's meet outside the cinema.|لنلتقِ خارج السينما.
+I'm saving money for a new bike.|أدخر المال لشراء دراجة جديدة.
+Take care and see you soon.|اعتنِ بنفسك وأراك قريباً.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.A2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Language Class","Maha joined an English class at the community centre. On the first day, she was shy and did not speak. The teacher gave the students a game, and they worked in pairs. Maha laughed and talked to her partner in English. After a month, she felt much more confident.","انضمت مها إلى حصة إنجليزي في المركز المجتمعي. في اليوم الأول كانت خجولة ولم تتحدث. أعطى المعلم الطلاب لعبة، وعملوا في أزواج. ضحكت مها وتحدثت مع زميلها بالإنجليزية. بعد شهر شعرت بثقة أكبر بكثير.","How did the students work in the game?",["Alone","In pairs","In a big group"],1],
+["A Walk by the River","Every evening, Ibrahim walks by the river near his house. It is quiet and the air is fresh. Yesterday, he saw an old man fishing. They said hello and talked about the weather. Ibrahim walked home feeling calm and happy.","كل مساء يمشي إبراهيم بجانب النهر القريب من بيته. المكان هادئ والهواء منعش. أمس رأى رجلاً كبيراً يصطاد السمك. ألقيا التحية وتحدثا عن الطقس. عاد إبراهيم إلى البيت وهو يشعر بالهدوء والسعادة.","Who did Ibrahim see?",["A teacher","An old man fishing","A child with a dog"],1]
+].forEach((s,i)=>stories.push({id:"off_a2_b3_"+i,level:"A2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* B1 - batch 1 */
+(function(){
+`I'd rather stay at home tonight.|أفضّل البقاء في البيت الليلة.
+She has been working here since 2020.|هي تعمل هنا منذ عام 2020.
+If I were you, I would accept the offer.|لو كنت مكانك لقبلت العرض.
+I'm looking forward to seeing you.|أتطلع إلى رؤيتك.
+He apologised for being late.|اعتذر عن تأخره.
+We ran out of milk this morning.|نفد الحليب عندنا هذا الصباح.
+It depends on the weather.|يعتمد ذلك على الطقس.
+I got used to the noise after a while.|اعتدت على الضجيج بعد فترة.
+You'd better take an umbrella.|من الأفضل أن تأخذ مظلة.
+She told me that she was moving to London.|أخبرتني أنها ستنتقل إلى لندن.
+The meeting has been cancelled.|تم إلغاء الاجتماع.
+I can't afford to buy a new car.|لا أستطيع تحمل تكلفة شراء سيارة جديدة.
+He is responsible for the marketing team.|هو مسؤول عن فريق التسويق.
+Although she was tired, she kept working.|رغم أنها كانت متعبة، واصلت العمل.
+I'll let you know as soon as I hear anything.|سأخبرك فور أن أسمع أي شيء.
+They have just moved into a new flat.|لقد انتقلوا للتو إلى شقة جديدة.
+What would you do in my situation?|ماذا كنت ستفعل في موقفي؟
+I'm thinking of changing my job.|أفكر في تغيير وظيفتي.
+The new bridge was built last year.|بُني الجسر الجديد العام الماضي.
+It's worth visiting the old city.|تستحق المدينة القديمة الزيارة.
+She seems to be in a good mood today.|يبدو أنها في مزاج جيد اليوم.
+I tend to forget names easily.|أميل إلى نسيان الأسماء بسهولة.
+He insisted on paying for dinner.|أصرّ على دفع حساب العشاء.
+Could you give me some advice about my studies?|هل يمكنك أن تنصحني بشأن دراستي؟
+We're supposed to arrive before noon.|من المفترض أن نصل قبل الظهر.
+I regret not studying harder.|أندم لأنني لم أدرس بجدّ أكبر.
+There's no point in arguing about it.|لا فائدة من الجدال حول ذلك.
+She's too young to drive.|هي أصغر من أن تقود السيارة.
+Do you mind if I open the window?|هل تمانع إن فتحت النافذة؟
+He didn't seem interested in the offer.|لم يبدُ مهتماً بالعرض.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.B1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Job Offer","Rami received two job offers in the same week. The first paid more money, but the office was far from his home. The second paid less, but it offered flexible hours and a friendly team. After discussing it with his family, he chose the second job. Months later, he was glad he had thought about his quality of life and not only about the salary.","تلقى رامي عرضي عمل في الأسبوع نفسه. دفع الأول مالاً أكثر لكن المكتب كان بعيداً عن بيته. أما الثاني فكان راتبه أقل لكنه قدّم ساعات مرنة وفريقاً ودوداً. وبعد مناقشة الأمر مع أسرته اختار الوظيفة الثانية. وبعد أشهر سُرّ لأنه فكر في جودة حياته لا في الراتب وحده.","Why did Rami choose the second job?",["It paid more","It had flexible hours and a friendly team","It was closer to the sea"],1],
+["The Old Photograph","While cleaning the attic, Salma found an old photograph of her grandparents standing in front of a small shop. On the back, someone had written a date and a name she did not recognise. She showed it to her grandmother, who smiled and explained that the shop had been her first business. Salma spent the afternoon listening to stories she had never heard before, and she decided to record them for the future.","أثناء تنظيف العلية وجدت سلمى صورة قديمة لجديها واقفين أمام متجر صغير. وعلى ظهرها كان أحدهم قد كتب تاريخاً واسماً لم تعرفه. أرتها لجدتها التي ابتسمت وشرحت أن المتجر كان أول مشروع لها. قضت سلمى فترة بعد الظهر تستمع إلى قصص لم تسمعها من قبل، وقررت تسجيلها للمستقبل.","What did Salma decide to do?",["Sell the photograph","Record her grandmother's stories","Clean the shop"],1],
+["The Marathon","Hadi had never run more than five kilometres, but he decided to join a local marathon. He trained three times a week and slowly increased the distance. On the day of the race, he felt nervous, and the last kilometres were very difficult. He didn't win, but he finished the race, and the crowd cheered loudly. For Hadi, crossing the finish line was a victory in itself.","لم يكن هادي قد ركض أكثر من خمسة كيلومترات من قبل، لكنه قرر المشاركة في ماراثون محلي. تدرّب ثلاث مرات في الأسبوع وزاد المسافة تدريجياً. في يوم السباق شعر بالتوتر وكانت الكيلومترات الأخيرة صعبة جداً. لم يفز، لكنه أنهى السباق وهتف الجمهور بصوت عالٍ. بالنسبة لهادي كان عبور خط النهاية انتصاراً في حد ذاته.","How often did Hadi train?",["Every day","Three times a week","Once a month"],1]
+].forEach((s,i)=>stories.push({id:"off_b1_b1_"+i,level:"B1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* B1 - batch 2 */
+(function(){
+`I've been meaning to call you for days.|كنت أنوي الاتصال بك منذ أيام.
+By the time we arrived, the film had started.|بحلول وقت وصولنا، كان الفيلم قد بدأ.
+She suggested taking a different route.|اقترحت أن نسلك طريقاً مختلفاً.
+I wasn't able to attend the lecture.|لم أتمكن من حضور المحاضرة.
+It's the best restaurant I've ever been to.|إنه أفضل مطعم ذهبت إليه في حياتي.
+He asked me if I could lend him some money.|سألني إن كان بإمكاني إقراضه بعض المال.
+We should take advantage of the good weather.|ينبغي أن نستغل الطقس الجميل.
+I'm fed up with this traffic.|لقد مللت من هذه الزحمة.
+Unless you hurry, you'll miss the train.|ما لم تسرع، ستفوتك القطار.
+She's in charge of organising the event.|هي المسؤولة عن تنظيم الفعالية.
+They were arguing about something silly.|كانوا يتجادلون حول شيء تافه.
+I couldn't help laughing.|لم أستطع منع نفسي من الضحك.
+The company is likely to hire more staff.|من المرجح أن توظف الشركة مزيداً من الموظفين.
+He's the man whose car was stolen.|هو الرجل الذي سُرقت سيارته.
+You don't have to decide right now.|ليس عليك أن تقرر الآن.
+I made a mistake, but I learnt from it.|ارتكبت خطأً، لكنني تعلمت منه.
+It took me ages to find a parking space.|استغرقني الأمر وقتاً طويلاً لإيجاد مكان لركن السيارة.
+As far as I know, the shop is closed on Sundays.|على حد علمي، المحل مغلق أيام الأحد.
+She's getting better at speaking in public.|تتحسن في الحديث أمام الجمهور.
+I'd like to point out one problem.|أود أن أشير إلى مشكلة واحدة.
+The film is based on a true story.|الفيلم مبني على قصة حقيقية.
+He managed to keep calm under pressure.|تمكن من الحفاظ على هدوئه تحت الضغط.
+We've got plenty of time left.|ما زال أمامنا متسع كبير من الوقت.
+I'm not sure whether to accept or refuse.|لست متأكداً هل أقبل أم أرفض.
+Having finished the report, she went home.|بعد أن أنهت التقرير، ذهبت إلى البيت.
+It was kind of you to invite us.|كان من اللطف منك أن تدعونا.
+Nobody knows how the fire started.|لا أحد يعرف كيف بدأ الحريق.
+I'm trying to cut down on sugar.|أحاول التقليل من السكر.
+He's been feeling stressed lately.|يشعر بالتوتر مؤخراً.
+Let's make the most of our holiday.|لنستفد أقصى استفادة من عطلتنا.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.B1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Street Musician","Every Saturday, a young man played the violin near the train station. Most people walked past without stopping, as they were in a hurry. One rainy morning, an elderly woman stopped to listen and gave him her umbrella. The musician was surprised by her kindness. He later said that this small gesture encouraged him to keep playing, even on difficult days.","كل يوم سبت كان شاب يعزف على الكمان قرب محطة القطار. معظم الناس كانوا يمرون دون أن يتوقفوا لأنهم مستعجلون. في صباح ممطر توقفت امرأة مسنة لتستمع وأعطته مظلتها. دهش الموسيقي من لطفها. وقال لاحقاً إن هذا التصرف البسيط شجعه على مواصلة العزف حتى في الأيام الصعبة.","What did the elderly woman give him?",["Some money","Her umbrella","A ticket"],1],
+["A Surprise Inspection","The manager of a small hotel heard that an inspector would visit sometime that month, but nobody knew the exact day. Instead of panicking, the staff decided to keep the hotel clean and welcoming every day. When the inspector finally arrived, he found nothing to criticise. He praised the team and explained that the best way to prepare for an inspection is to maintain good habits all the time.","سمع مدير فندق صغير أن مفتشاً سيزور الفندق في وقت ما من هذا الشهر، لكن لا أحد عرف اليوم بالضبط. وبدلاً من الذعر قرر العاملون إبقاء الفندق نظيفاً ومرحباً كل يوم. وعندما وصل المفتش أخيراً لم يجد ما ينتقده. أثنى على الفريق وشرح أن أفضل طريقة للاستعداد للتفتيش هي الحفاظ على العادات الجيدة طوال الوقت.","What is the main message?",["Panic helps you work faster","Good habits are the best preparation","Inspections are unfair"],1],
+["Learning from Failure","Mariam failed her driving test twice, and she almost gave up. Her instructor advised her to think about what went wrong instead of feeling embarrassed. She realised that she was too nervous at junctions, so she practised there more often. On her third attempt, she passed. Mariam later said that failure had taught her more than success would have.","رسبت مريم في اختبار القيادة مرتين وكادت تستسلم. نصحها مدربها بأن تفكر فيما حدث بدلاً من أن تشعر بالإحراج. أدركت أنها كانت متوترة جداً عند التقاطعات، فتدربت هناك أكثر. وفي المحاولة الثالثة نجحت. وقالت مريم لاحقاً إن الفشل علّمها أكثر مما كان سيعلمها النجاح.","Why did Mariam practise more at junctions?",["She felt too nervous there","She liked them","Her friend told her to"],0]
+].forEach((s,i)=>stories.push({id:"off_b1_b2_"+i,level:"B1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* B1 - batch 3 */
+(function(){
+`I was about to leave when the phone rang.|كنت على وشك المغادرة عندما رن الهاتف.
+She's the kind of person who never gives up.|هي من النوع الذي لا يستسلم أبداً.
+We've been friends for as long as I can remember.|نحن صديقان منذ أن أتذكر.
+I'm afraid I disagree with you.|أخشى أنني لا أتفق معك.
+He pretended not to hear me.|تظاهر بأنه لم يسمعني.
+There's a lot to be said for living in the countryside.|للعيش في الريف مزايا كثيرة.
+I'd appreciate it if you could reply soon.|سأكون ممتناً لو استطعت الرد قريباً.
+The more you practise, the better you get.|كلما تدربت أكثر، أصبحت أفضل.
+She prefers walking to driving.|تفضل المشي على القيادة.
+They've decided to put off the trip.|قرروا تأجيل الرحلة.
+I came across an old friend yesterday.|صادفت صديقاً قديماً أمس.
+He's allergic to nuts.|لديه حساسية من المكسرات.
+The film was so boring that I fell asleep.|كان الفيلم مملاً لدرجة أنني نمت.
+You should have told me earlier.|كان ينبغي أن تخبرني من قبل.
+She gave up smoking last year.|أقلعت عن التدخين العام الماضي.
+We're short of time, so let's begin.|الوقت ضيق، فلنبدأ.
+I'm used to working under pressure.|أنا معتاد على العمل تحت الضغط.
+He turned down the job offer.|رفض عرض العمل.
+It makes no difference to me.|لا يفرق الأمر معي.
+Please make sure you lock the door.|من فضلك تأكد من إغلاق الباب بالمفتاح.
+The rent has gone up again.|ارتفع الإيجار مرة أخرى.
+I'd like to thank everyone who helped.|أود أن أشكر كل من ساعد.
+She looked after her little brother.|اعتنت بأخيها الصغير.
+They've been married for twenty years.|هما متزوجان منذ عشرين عاماً.
+What do you think of the new manager?|ما رأيك في المدير الجديد؟
+I wouldn't have gone if I'd known.|لما ذهبت لو كنت أعلم.
+Hope to see you again soon.|آمل أن أراك مجدداً قريباً.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.B1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Garden Project","Last spring, the residents of a small apartment building decided to turn an empty piece of land into a shared garden. At first, only three neighbours helped, but more people joined when they saw the first flowers. They planted vegetables, shared tools, and took turns watering the plants. By summer, the garden was not only beautiful but also a place where neighbours who had never met became friends.","في الربيع الماضي قرر سكان مبنى سكني صغير تحويل قطعة أرض فارغة إلى حديقة مشتركة. في البداية ساعد ثلاثة جيران فقط، لكن المزيد انضموا عندما رأوا الأزهار الأولى. زرعوا الخضروات وتشاركوا الأدوات وتناوبوا على سقي النباتات. وبحلول الصيف لم تكن الحديقة جميلة فحسب، بل صارت مكاناً يتعرف فيه جيران لم يلتقوا من قبل ويصبحون أصدقاء.","Why did more people join the project?",["They were paid","They saw the first flowers","The government asked them"],1],
+["The Wrong Train","Yousef was travelling to another city to meet a friend when he realised he was on the wrong train. At first he felt worried, but he decided to ask the conductor for help. The conductor explained that he could get off at the next station and take a train back. Although he arrived two hours late, his friend was waiting patiently, and they laughed about the mistake over dinner.","كان يوسف مسافراً إلى مدينة أخرى ليقابل صديقاً عندما أدرك أنه في القطار الخطأ. شعر بالقلق في البداية، لكنه قرر أن يطلب المساعدة من مراقب القطار. شرح له المراقب أنه يمكنه النزول في المحطة التالية وركوب قطار للعودة. ورغم أنه وصل متأخراً ساعتين، كان صديقه ينتظره بصبر، وضحكا على الخطأ أثناء العشاء.","What did the conductor suggest?",["Stay on the train","Get off at the next station and take a train back","Call a taxi"],1]
+].forEach((s,i)=>stories.push({id:"off_b1_b3_"+i,level:"B1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* B2 - batch 1 */
+(function(){
+`The negotiations broke down after several hours.|انهارت المفاوضات بعد عدة ساعات.
+She was reluctant to share her personal views.|كانت مترددة في مشاركة آرائها الشخصية.
+Provided that you finish on time, you can leave early.|بشرط أن تنهي في الوقت المحدد، يمكنك المغادرة مبكراً.
+The restaurant has gained a reputation for its seafood.|اكتسب المطعم سمعة طيبة بفضل مأكولاته البحرية.
+It never occurred to me that he might be lying.|لم يخطر ببالي قط أنه قد يكذب.
+They are expected to announce the results tomorrow.|من المتوقع أن يعلنوا النتائج غداً.
+He regretted not having taken the opportunity.|ندم لأنه لم يغتنم الفرصة.
+The project fell behind schedule due to a lack of funding.|تأخر المشروع عن موعده بسبب نقص التمويل.
+I can't help feeling that something is wrong.|لا أستطيع إلا أن أشعر بأن هناك خطباً ما.
+She came across as confident and well-prepared.|بدت واثقة ومستعدة جيداً.
+The report highlights a number of serious concerns.|يسلط التقرير الضوء على عدد من المخاوف الجدية.
+By this time next year, I will have graduated.|بحلول هذا الوقت من العام القادم، سأكون قد تخرجت.
+Contrary to popular belief, the test was not difficult.|خلافاً للاعتقاد الشائع، لم يكن الاختبار صعباً.
+He took the blame for the mistake.|تحمّل اللوم على الخطأ.
+The more complicated the problem, the more patience it requires.|كلما كانت المشكلة أكثر تعقيداً، احتاجت إلى صبر أكبر.
+We're considering a range of alternatives.|نفكر في مجموعة من البدائل.
+She has a tendency to overreact.|لديها ميل إلى المبالغة في ردة الفعل.
+The decision was made without consulting the staff.|اتُّخذ القرار دون استشارة الموظفين.
+Apart from a few minor errors, the essay was excellent.|باستثناء بعض الأخطاء الطفيفة، كان المقال ممتازاً.
+I'm not in a position to comment on that.|لست في موقع يسمح لي بالتعليق على ذلك.
+The scheme aims to reduce unemployment among young people.|تهدف الخطة إلى تقليل البطالة بين الشباب.
+It's high time we took action.|حان الوقت لنتخذ إجراءً.
+He was accused of spreading false information.|اتُّهم بنشر معلومات كاذبة.
+Despite her best efforts, she couldn't persuade him.|رغم بذلها أقصى جهدها، لم تستطع إقناعه.
+The two companies decided to merge.|قررت الشركتان الاندماج.
+Not until later did I realise my mistake.|لم أدرك خطئي إلا لاحقاً.
+They set up the charity to support local families.|أسسوا الجمعية الخيرية لدعم العائلات المحلية.
+I'd be grateful if you could keep this confidential.|سأكون ممتناً لو أبقيت هذا الأمر سرياً.
+The new policy is bound to cause controversy.|من المؤكد أن السياسة الجديدة ستثير الجدل.
+She made a point of thanking every volunteer.|حرصت على شكر كل متطوع.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.B2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Remote Village","Deep in the mountains, a remote village had no reliable internet connection, which made it difficult for students to follow online lessons. A young engineer who had grown up there returned and proposed building a small solar-powered communication tower. Although many villagers doubted the idea, they contributed materials and labour. Within a year, the connection was stable, and several students received scholarships that would previously have been out of reach.","في أعماق الجبال كانت قرية نائية بلا اتصال موثوق بالإنترنت، مما صعّب على الطلاب متابعة الدروس عبر الإنترنت. عاد مهندس شاب نشأ هناك واقترح بناء برج اتصالات صغير يعمل بالطاقة الشمسية. ورغم شكوك كثير من القرويين في الفكرة، ساهموا بالمواد والجهد. وخلال عام أصبح الاتصال مستقراً، وحصل عدة طلاب على منح كانت من قبل بعيدة المنال.","What did the engineer propose?",["A new road","A solar-powered communication tower","A larger school"],1],
+["The Honest Review","When Leila's café received a harsh online review, her first reaction was to feel offended. After a few days, however, she reread the comment and realised that it contained some valid points about the slow service. She trained her staff, changed the menu layout, and even thanked the customer publicly. To her surprise, the same customer returned and wrote a much more positive review, and the café attracted new visitors who admired her openness.","عندما تلقى مقهى ليلى مراجعة قاسية على الإنترنت، كان رد فعلها الأول أن شعرت بالإساءة. لكنها بعد أيام أعادت قراءة التعليق وأدركت أنه يتضمن نقاطاً صحيحة عن بطء الخدمة. دربت موظفيها وغيّرت تصميم القائمة وشكرت الزبون علناً. وبشكل مفاجئ عاد الزبون نفسه وكتب مراجعة أكثر إيجابية بكثير، وجذب المقهى زواراً جدداً أعجبهم انفتاحها.","What did Leila realise after rereading the review?",["It was completely false","It contained valid points","It was written by a competitor"],1],
+["The Last Day of Summer","On the last day of the holiday, the family decided to drive to the coast, even though the forecast predicted showers. They had barely arrived when the clouds cleared, revealing a deserted beach and a sky streaked with orange. Nobody spoke for a while; they simply watched the waves. Years later, the children still described that evening as the most memorable moment of the entire summer.","في آخر يوم من العطلة قررت الأسرة القيادة إلى الساحل رغم أن التوقعات أشارت إلى زخات مطر. ما كادوا يصلون حتى انقشعت الغيوم، كاشفة عن شاطئ خالٍ وسماء تتخللها خطوط برتقالية. لم يتكلم أحد لبعض الوقت؛ اكتفوا بمشاهدة الأمواج. وبعد سنوات ظل الأطفال يصفون تلك الأمسية بأنها أكثر لحظة لا تُنسى في الصيف كله.","What did the forecast predict?",["Showers","Snow","A heatwave"],0]
+].forEach((s,i)=>stories.push({id:"off_b2_b1_"+i,level:"B2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* B2 - batch 2 */
+(function(){
+`She was under the impression that the meeting was cancelled.|كان لديها انطباع بأن الاجتماع قد أُلغي.
+The findings are consistent with previous studies.|النتائج متوافقة مع الدراسات السابقة.
+He took it for granted that everyone would agree.|افترض أن الجميع سيوافقون.
+Were it not for your help, I would have failed.|لولا مساعدتك لفشلت.
+The manager insisted that the deadline be extended.|أصرّ المدير على تمديد الموعد النهائي.
+It's a matter of time before they find a solution.|إنها مسألة وقت قبل أن يجدوا حلاً.
+The festival draws thousands of visitors every year.|يجذب المهرجان آلاف الزوار كل عام.
+I have mixed feelings about moving abroad.|لدي مشاعر متضاربة حيال الانتقال إلى الخارج.
+She dismissed the criticism as unfair.|رفضت الانتقاد باعتباره غير عادل.
+The suspect denied any involvement in the crime.|أنكر المشتبه به أي تورط في الجريمة.
+Prices have risen sharply over the past decade.|ارتفعت الأسعار بشكل حاد خلال العقد الماضي.
+It goes without saying that safety comes first.|وغني عن القول إن السلامة تأتي أولاً.
+He's under a lot of pressure at work.|هو تحت ضغط كبير في العمل.
+The documentary sheds light on a little-known issue.|يسلط الفيلم الوثائقي الضوء على قضية قليلة المعرفة.
+She turned out to be an excellent leader.|تبين أنها قائدة ممتازة.
+We were taken aback by his sudden resignation.|فوجئنا باستقالته المفاجئة.
+Rather than complain, he decided to take action.|بدلاً من الشكوى، قرر اتخاذ إجراء.
+The agreement is subject to approval by the board.|الاتفاقية خاضعة لموافقة مجلس الإدارة.
+In the long run, saving money pays off.|على المدى الطويل، يؤتي الادخار ثماره.
+I can't make up my mind about the offer.|لا أستطيع حسم رأيي بشأن العرض.
+The lecture was thought-provoking and well delivered.|كانت المحاضرة محفزة للتفكير ومقدَّمة بشكل جيد.
+She has been awarded a scholarship to study abroad.|مُنحت منحة دراسية للدراسة في الخارج.
+As a result of the storm, flights were cancelled.|نتيجة للعاصفة، أُلغيت الرحلات الجوية.
+He's not as experienced as he claims to be.|ليس بالخبرة التي يدّعيها.
+The team worked around the clock to meet the deadline.|عمل الفريق على مدار الساعة للالتزام بالموعد النهائي.
+You can't judge a person by appearances alone.|لا يمكنك الحكم على شخص من مظهره فقط.
+The authorities have launched an investigation.|فتحت السلطات تحقيقاً.
+It was a narrow escape, but nobody was hurt.|كانت نجاة بأعجوبة، لكن لم يُصب أحد.
+They struck a deal after weeks of discussion.|توصلوا إلى اتفاق بعد أسابيع من النقاش.
+She came up with a creative way to solve the issue.|ابتكرت طريقة إبداعية لحل المشكلة.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.B2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Translator","Nadia worked as a freelance translator, and she often struggled to explain to clients why some texts take longer than others. One day she was asked to translate a poem, and she spent three days looking for the right words. The client was initially impatient, but when he read the final version, he admitted that it captured the original feeling perfectly. From then on, he trusted her judgement and never questioned her deadlines again.","كانت ناديا تعمل مترجمة مستقلة، وغالباً ما واجهت صعوبة في أن تشرح للعملاء لماذا تستغرق بعض النصوص وقتاً أطول من غيرها. وفي أحد الأيام طُلب منها ترجمة قصيدة، فقضت ثلاثة أيام تبحث عن الكلمات المناسبة. كان العميل في البداية نافد الصبر، لكنه عندما قرأ النسخة النهائية اعترف بأنها نقلت الإحساس الأصلي تماماً. ومنذ ذلك الحين وثق بحكمها ولم يعد يعترض على مواعيدها.","How long did Nadia spend on the poem?",["One day","Three days","A week"],1],
+["The Debate Team","Karim had always been shy, so nobody expected him to join the school debate team. During his first competition, he stumbled over his words and felt humiliated. Instead of quitting, he asked his coach for honest feedback and began practising in front of a mirror. Gradually, his confidence grew, and by the end of the year he was chosen to represent the school at the national finals.","كان كريم دائماً خجولاً، فلم يتوقع أحد أن ينضم إلى فريق المناظرة بالمدرسة. في مسابقته الأولى تعثر في كلماته وشعر بالإذلال. وبدلاً من الاستقالة طلب من مدربه ملاحظات صريحة وبدأ التدرب أمام المرآة. وتدريجياً نمت ثقته، وبحلول نهاية العام اختير لتمثيل المدرسة في النهائيات الوطنية.","What did Karim do after his first competition?",["He quit the team","He asked for honest feedback","He changed schools"],1],
+["The Power Cut","During a long power cut in the city, a neighbourhood that usually kept to itself began to change. People gathered outside, shared candles, and offered food to those who lived alone. A retired teacher organised storytelling for the children while adults repaired a broken generator together. When the lights finally returned, many residents felt a strange sense of disappointment, because the closeness they had experienced seemed likely to fade.","أثناء انقطاع طويل للكهرباء في المدينة بدأ حي كان سكانه عادةً منعزلين يتغير. تجمع الناس في الخارج وتشاركوا الشموع وقدموا الطعام لمن يعيشون وحدهم. نظّمت معلمة متقاعدة جلسات حكايات للأطفال بينما أصلح الكبار معاً مولداً معطلاً. وعندما عادت الأضواء أخيراً شعر كثير من السكان بخيبة أمل غريبة، لأن القرب الذي عاشوه بدا أنه سيتلاشى.","Why did some residents feel disappointed?",["The food ran out","They feared the closeness would fade","The generator broke"],1]
+].forEach((s,i)=>stories.push({id:"off_b2_b2_"+i,level:"B2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* B2 - batch 3 */
+(function(){
+`The government is under pressure to cut taxes.|الحكومة تحت ضغط لخفض الضرائب.
+He admitted that he had made a serious error of judgement.|اعترف بأنه ارتكب خطأً جسيماً في التقدير.
+She is renowned for her attention to detail.|تشتهر بانتباهها للتفاصيل.
+The two sides eventually reached a compromise.|توصل الطرفان في النهاية إلى حل وسط.
+I was caught up in traffic for over an hour.|علقت في الزحام لأكثر من ساعة.
+It's not worth getting upset over a minor issue.|لا يستحق الأمر الانزعاج بسبب مسألة صغيرة.
+The proposal was met with widespread opposition.|قوبل المقترح بمعارضة واسعة.
+He tends to jump to conclusions.|يميل إلى القفز إلى الاستنتاجات.
+They managed to overcome a series of obstacles.|تمكنوا من تجاوز سلسلة من العقبات.
+Her speech left a lasting impression on the audience.|ترك خطابها انطباعاً دائماً لدى الجمهور.
+The cost of living has become a major concern.|أصبحت تكلفة المعيشة مصدر قلق كبير.
+I'd rather not get involved in their dispute.|أفضّل ألا أتورط في خلافهم.
+We have to weigh up the pros and cons.|علينا أن نوازن بين الإيجابيات والسلبيات.
+The film received mixed reviews from critics.|تلقى الفيلم مراجعات متباينة من النقاد.
+She is well aware of the risks involved.|هي مدركة تماماً للمخاطر المترتبة.
+He went out of his way to make us feel welcome.|بذل جهداً إضافياً ليشعرنا بالترحيب.
+Having said that, I still think it's a good idea.|مع ذلك، ما زلت أرى أنها فكرة جيدة.
+The museum has been closed for renovation.|أُغلق المتحف من أجل التجديد.
+What I need is a bit of peace and quiet.|ما أحتاج إليه هو قليل من السلام والهدوء.
+They were on the verge of giving up.|كانوا على وشك الاستسلام.
+It was by no means an easy decision.|لم يكن قراراً سهلاً بأي حال.
+The company is striving to improve customer satisfaction.|تسعى الشركة إلى تحسين رضا العملاء.
+She handled the awkward situation with tact.|تعاملت مع الموقف المحرج بلباقة.
+The new regulations come into effect next month.|ستدخل اللوائح الجديدة حيز التنفيذ الشهر القادم.
+I can't stand being kept waiting.|لا أطيق أن يتركوني أنتظر.
+He's determined to make a name for himself.|هو مصمم على صنع اسم لنفسه.
+All things considered, it was a successful year.|بعد النظر في كل الأمور، كانت سنة ناجحة.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.B2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Midnight Call","Amal was fast asleep when her phone rang at midnight. It was her brother, who had missed the last bus and was stranded in a small town. Although she was exhausted, she borrowed her neighbour's car and drove for an hour to pick him up. On the way home, they talked more honestly than they had in years. Amal later admitted that the lost sleep had been a small price for such a conversation.","كانت أمل في نوم عميق عندما رن هاتفها عند منتصف الليل. كان المتصل أخاها الذي فاتته آخر حافلة وعلق في بلدة صغيرة. ورغم أنها كانت منهكة، استعارت سيارة جارها وقادت ساعة لتأخذه. وفي طريق العودة تحدثا بصدق أكبر مما فعلا منذ سنوات. واعترفت أمل لاحقاً بأن النوم الذي فقدته كان ثمناً صغيراً لمثل هذه المحادثة.","Why was her brother stranded?",["He lost his phone","He missed the last bus","His car broke down"],1],
+["The Chess Club","At first, the school chess club had only four members, and the teacher in charge considered closing it. Then a new student, who had learnt the game from his grandfather, suggested holding friendly tournaments during lunch breaks. The idea spread quickly, and within a term, the club had more than thirty members. Many of them said that chess had taught them patience, and that losing gracefully was just as important as winning.","في البداية لم يكن لنادي الشطرنج بالمدرسة سوى أربعة أعضاء، وفكر المعلم المسؤول في إغلاقه. ثم اقترح طالب جديد تعلم اللعبة من جده تنظيم بطولات ودية في فترات الغداء. انتشرت الفكرة بسرعة، وخلال فصل دراسي صار للنادي أكثر من ثلاثين عضواً. وقال كثير منهم إن الشطرنج علّمهم الصبر، وإن الخسارة بكياسة لا تقل أهمية عن الفوز.","How did the new student learn chess?",["From his grandfather","From a book","At school"],0]
+].forEach((s,i)=>stories.push({id:"off_b2_b3_"+i,level:"B2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* C1 - batch 1 */
+(function(){
+`The ramifications of the decision are yet to be fully understood.|لم تُفهم تداعيات القرار بالكامل بعد.
+She articulated her concerns with remarkable clarity.|عبّرت عن مخاوفها بوضوح لافت.
+Few people were aware of the extent of the problem.|قلة من الناس أدركوا حجم المشكلة.
+The committee has been scrutinising the proposal for weeks.|تدقق اللجنة في المقترح منذ أسابيع.
+No sooner had he sat down than the phone rang.|ما إن جلس حتى رن الهاتف.
+It would be naive to assume that the issue will resolve itself.|من السذاجة افتراض أن المشكلة ستُحل من تلقاء نفسها.
+The author deftly weaves together several narrative threads.|يحبك المؤلف ببراعة عدة خيوط سردية معاً.
+Should you require further information, please do not hesitate to contact us.|إذا احتجتم إلى مزيد من المعلومات، فلا تترددوا في التواصل معنا.
+There is a growing consensus that reform is overdue.|هناك إجماع متزايد على أن الإصلاح قد تأخر.
+His reticence was mistaken for arrogance.|فُسّر تحفظه على أنه غطرسة.
+The initiative was hailed as a landmark achievement.|أُشيد بالمبادرة بوصفها إنجازاً بارزاً.
+Little did she know how much her life was about to change.|لم تكن تعلم كم ستتغير حياتها.
+The study underscores the importance of early intervention.|تؤكد الدراسة أهمية التدخل المبكر.
+They were criticised for their lack of transparency.|وُجه إليهم النقد لافتقارهم إلى الشفافية.
+It is imperative that we act before the situation deteriorates.|من الضروري أن نتحرك قبل أن يسوء الوضع.
+Her success can be attributed to relentless determination.|يمكن أن يُعزى نجاحها إلى عزيمة لا تلين.
+The negotiations reached an impasse.|وصلت المفاوضات إلى طريق مسدود.
+He has an uncanny ability to anticipate market trends.|لديه قدرة غريبة على توقع اتجاهات السوق.
+The findings call into question many long-held assumptions.|تضع النتائج كثيراً من الافتراضات الراسخة موضع تساؤل.
+Despite mounting evidence, he refused to concede.|رغم تراكم الأدلة، رفض أن يتنازل.
+The legislation is designed to safeguard vulnerable consumers.|صُمم التشريع لحماية المستهلكين الضعفاء.
+One cannot overstate the significance of this discovery.|لا يمكن المبالغة في أهمية هذا الاكتشاف.
+She was adamant that the report be published.|كانت مصرّة على نشر التقرير.
+The discussion veered off topic.|انحرف النقاش عن موضوعه.
+What sets her apart is her capacity for empathy.|ما يميزها هو قدرتها على التعاطف.
+The economy is showing tentative signs of recovery.|يُظهر الاقتصاد بوادر حذرة للتعافي.
+It is widely acknowledged that sleep affects cognitive performance.|من المعروف على نطاق واسع أن النوم يؤثر في الأداء الإدراكي.
+The report was riddled with inaccuracies.|كان التقرير مليئاً بالأخطاء.
+He gave a measured response to the accusations.|قدّم رداً متزناً على الاتهامات.
+Seldom have I encountered such generosity.|نادراً ما صادفت مثل هذا الكرم.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.C1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Archive","In the basement of the city library, an archivist discovered a collection of letters written by ordinary residents during a long-forgotten flood. Rather than describing the disaster itself, the letters recorded small acts of kindness: shared bread, borrowed boats, children carried to safety. The archivist arranged an exhibition, and visitors were struck by how much these modest accounts revealed about the community's character. History, she concluded, is often hidden in the unremarkable.","في قبو مكتبة المدينة اكتشف أمين أرشيف مجموعة رسائل كتبها سكان عاديون أثناء فيضان منسي منذ زمن بعيد. وبدلاً من وصف الكارثة نفسها، سجلت الرسائل أعمال لطف صغيرة: خبزاً تم تقاسمه وقوارب مستعارة وأطفالاً حُملوا إلى بر الأمان. نظمت أمينة الأرشيف معرضاً، وذُهل الزوار من مقدار ما كشفته هذه الروايات المتواضعة عن طباع المجتمع. وخلصت إلى أن التاريخ كثيراً ما يختبئ في ما هو عادي.","What did the letters mostly describe?",["The size of the flood","Small acts of kindness","Government plans"],1],
+["A Question of Trust","When the firm's new software began producing inconsistent results, the engineers were divided. Some wanted to conceal the flaw until a patch was ready, while others insisted on informing clients immediately. After a heated meeting, the director sided with transparency, warning that short-term embarrassment was preferable to long-term damage to credibility. Several clients expressed gratitude for the candour, and the company's reputation, paradoxically, emerged stronger.","عندما بدأ البرنامج الجديد للشركة ينتج نتائج غير متسقة، انقسم المهندسون. أراد بعضهم إخفاء العيب حتى يجهز التحديث، بينما أصر آخرون على إبلاغ العملاء فوراً. وبعد اجتماع محتدم انحاز المدير إلى الشفافية محذراً من أن الإحراج القصير الأمد أفضل من الإضرار الطويل الأمد بالمصداقية. وأعرب عدة عملاء عن امتنانهم للصراحة، وخرجت سمعة الشركة، على نحو مفارق، أقوى.","What did the director decide?",["To hide the flaw","To be transparent with clients","To cancel the software"],1],
+["The Silent Observer","Elena preferred to listen rather than speak during meetings, a habit that colleagues often interpreted as indifference. Yet when conflicts arose, she was usually the one who identified the underlying cause, having noticed patterns that others had missed. Her manager eventually began consulting her before major decisions. Elena found it ironic that the quality she had once considered a weakness had become the foundation of her influence.","كانت إيلينا تفضل الاستماع على الكلام أثناء الاجتماعات، وهي عادة فسّرها زملاؤها غالباً على أنها لامبالاة. ومع ذلك، حين كانت تنشأ الخلافات، كانت عادةً هي من يحدد السبب الكامن، إذ لاحظت أنماطاً فاتت الآخرين. وبدأ مديرها في النهاية يستشيرها قبل القرارات الكبرى. ووجدت إيلينا من المفارقة أن الصفة التي اعتبرتها يوماً نقطة ضعف أصبحت أساس تأثيرها.","How did colleagues interpret Elena's silence?",["As indifference","As anger","As shyness"],0]
+].forEach((s,i)=>stories.push({id:"off_c1_b1_"+i,level:"C1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* C1 - batch 2 */
+(function(){
+`The exhibition offers a rare glimpse into the artist's early work.|يقدم المعرض لمحة نادرة عن أعمال الفنان المبكرة.
+It stands to reason that quality takes time.|من المنطقي أن الجودة تتطلب وقتاً.
+Her reluctance to speak publicly belies her expertise.|يتناقض ترددها في الحديث علناً مع خبرتها.
+The proposal was tabled for further discussion.|أُرجئ المقترح لمزيد من النقاش.
+Not only was the plan ambitious, it was also feasible.|لم تكن الخطة طموحة فحسب، بل كانت قابلة للتنفيذ أيضاً.
+He was heavily criticised for his cavalier attitude.|انتُقد بشدة بسبب موقفه المتهور.
+The ruling sets a significant precedent.|يرسي الحكم سابقة مهمة.
+She grappled with the ethical implications of her decision.|صارعت التبعات الأخلاقية لقرارها.
+The data lend credence to the theory.|تدعم البيانات النظرية وتمنحها مصداقية.
+Only then did the full scale of the damage become apparent.|عندئذٍ فقط اتضح الحجم الكامل للضرر.
+It is incumbent upon us to protect the environment.|يقع على عاتقنا واجب حماية البيئة.
+The two proposals are fundamentally incompatible.|المقترحان غير متوافقين جوهرياً.
+He walked a fine line between confidence and arrogance.|سار على خيط رفيع بين الثقة والغطرسة.
+The debate has polarised public opinion.|استقطب الجدل الرأي العام.
+She has an astute grasp of political dynamics.|لديها فهم حصيف للديناميات السياسية.
+The initiative has yielded tangible results.|أسفرت المبادرة عن نتائج ملموسة.
+They have come under increasing scrutiny.|وقعوا تحت تدقيق متزايد.
+There's a fine balance between ambition and recklessness.|هناك توازن دقيق بين الطموح والتهور.
+His remarks were taken out of context.|اقتُطعت تصريحاته من سياقها.
+The negotiations have been fraught with difficulty.|كانت المفاوضات محفوفة بالصعوبات.
+By and large, the response has been positive.|بوجه عام، كانت الاستجابة إيجابية.
+She exercised considerable restraint under provocation.|مارست ضبطاً كبيراً للنفس تحت الاستفزاز.
+It remains to be seen whether the policy will succeed.|يبقى أن نرى ما إذا كانت السياسة ستنجح.
+The scandal has tarnished the company's reputation.|شوهت الفضيحة سمعة الشركة.
+He spoke with an eloquence that captivated the audience.|تحدث ببلاغة أسرت الجمهور.
+It is hard to reconcile these conflicting accounts.|من الصعب التوفيق بين هذه الروايات المتضاربة.
+The research challenges the prevailing orthodoxy.|يتحدى البحث التيار السائد.
+Given the circumstances, the outcome was hardly surprising.|بالنظر إلى الظروف، لم تكن النتيجة مفاجئة تقريباً.
+She resolved to confront the issue head-on.|عقدت العزم على مواجهة المشكلة مباشرة.
+What began as a minor dispute escalated rapidly.|ما بدأ كخلاف بسيط تصاعد بسرعة.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.C1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Cartographer","Tomas spent forty years mapping remote regions, long after satellites had made his craft seem obsolete. Colleagues occasionally teased him for clinging to a vanishing skill. Yet when a severe storm disabled digital navigation in a mountainous region, rescuers relied on his hand-drawn charts to locate stranded hikers. The episode reminded the community that expertise, however unfashionable it may appear, can prove indispensable when technology fails.","قضى توماس أربعين عاماً في رسم خرائط المناطق النائية، بعد وقت طويل من جعلت الأقمار الصناعية مهنته تبدو عتيقة. وكان زملاؤه يمازحونه أحياناً لتمسكه بمهارة تختفي. ومع ذلك، حين عطلت عاصفة شديدة الملاحة الرقمية في منطقة جبلية، اعتمد رجال الإنقاذ على خرائطه المرسومة يدوياً لتحديد موقع المتنزهين العالقين. وذكّرت الحادثة المجتمع بأن الخبرة، مهما بدت غير رائجة، قد تثبت أنها لا غنى عنها حين تفشل التكنولوجيا.","Why were Tomas's maps useful?",["Digital navigation was disabled","They were very colourful","They were free"],0],
+["The Unspoken Rule","In many workplaces, certain expectations are never written down yet are rigorously observed: who speaks first in meetings, who sits where, how quickly emails must be answered. Newcomers often discover these conventions only by breaking them. Mira, who joined a firm after years abroad, learnt to observe before acting. By watching how colleagues interacted, she deciphered the unspoken rules within weeks and avoided the awkwardness that had embarrassed her predecessors.","في كثير من أماكن العمل توجد توقعات معينة لا تُكتب أبداً لكنها تُراعى بصرامة: من يتحدث أولاً في الاجتماعات، ومن يجلس أين، وبأي سرعة يجب الرد على الرسائل. وغالباً لا يكتشف الوافدون الجدد هذه الأعراف إلا بخرقها. أما ميرا التي انضمت إلى شركة بعد سنوات في الخارج، فتعلمت أن تراقب قبل أن تتصرف. وبمشاهدة تفاعل زملائها فكّت شفرة القواعد غير المعلنة خلال أسابيع وتجنبت الإحراج الذي أربك من سبقوها.","How did Mira learn the unspoken rules?",["By asking her manager","By observing colleagues","By reading a handbook"],1],
+["The Weight of Memory","Henrik returned to his childhood village after decades abroad, expecting to find it unchanged. The bakery had become a pharmacy, and the lane where he had played was now a car park. Though initially dismayed, he gradually realised that his sorrow stemmed less from the changes themselves than from the illusion that the past could be preserved. He left, not disillusioned, but with a quieter appreciation of what had endured in his memory.","عاد هنريك إلى قريته التي نشأ فيها بعد عقود في الخارج، متوقعاً أن يجدها كما هي. كان المخبز قد صار صيدلية، والزقاق الذي لعب فيه موقفاً للسيارات. ورغم أنه شعر بالأسى في البداية، أدرك تدريجياً أن حزنه لم ينبع من التغييرات نفسها بقدر ما نبع من وهم إمكانية حفظ الماضي. غادر، لا خائب الأمل، بل بتقدير أهدأ لما بقي حياً في ذاكرته.","What had the bakery become?",["A pharmacy","A school","A car park"],0]
+].forEach((s,i)=>stories.push({id:"off_c1_b2_"+i,level:"C1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* C1 - batch 3 */
+(function(){
+`The firm's meteoric rise surprised even its founders.|فاجأ الصعود الصاروخي للشركة حتى مؤسسيها.
+It would be remiss of me not to mention her contribution.|سيكون من التقصير ألا أذكر مساهمتها.
+The ambiguity of the contract left room for dispute.|ترك غموض العقد مجالاً للنزاع.
+She navigated the crisis with remarkable composure.|تجاوزت الأزمة برباطة جأش لافتة.
+The theory has been widely discredited.|فقدت النظرية مصداقيتها على نطاق واسع.
+He has a propensity for exaggeration.|لديه ميل إلى المبالغة.
+Under no circumstances should the door be left unlocked.|لا ينبغي بأي حال ترك الباب غير مغلق.
+The reforms are intended to streamline the process.|تهدف الإصلاحات إلى تبسيط الإجراءات.
+Their friendship withstood the test of time.|صمدت صداقتهما أمام اختبار الزمن.
+It is tempting to dismiss such concerns as trivial.|من المغري اعتبار مثل هذه المخاوف تافهة.
+The novel explores the tension between duty and desire.|تستكشف الرواية التوتر بين الواجب والرغبة.
+She was lauded for her unwavering integrity.|أُشيد بها لنزاهتها الثابتة.
+Nothing could have prepared us for such an outcome.|لم يكن شيء ليعدّنا لمثل هذه النتيجة.
+The government has pledged to tackle inequality.|تعهدت الحكومة بمعالجة اللامساواة.
+He exuded an air of quiet authority.|كان يشع بهالة من السلطة الهادئة.
+The meeting was adjourned until further notice.|أُجّل الاجتماع إلى إشعار آخر.
+Hardly anyone anticipated such a swift resolution.|بالكاد توقع أحد حلاً بهذه السرعة.
+The cultural landscape has shifted dramatically.|تغير المشهد الثقافي بشكل جذري.
+She is notoriously difficult to please.|يُعرف عنها صعوبة إرضائها.
+The findings are tentative and require further verification.|النتائج أولية وتحتاج إلى مزيد من التحقق.
+Contrary to expectations, the merger proved successful.|خلافاً للتوقعات، أثبت الاندماج نجاحه.
+It is a testament to her resilience that she recovered.|إن تعافيها شهادة على صمودها.
+The controversy shows no sign of abating.|لا تظهر الجدالات أي علامة على التراجع.
+He was entrusted with a delicate diplomatic mission.|أُوكلت إليه مهمة دبلوماسية حساسة.
+What the report fails to acknowledge is the human cost.|ما يخفق التقرير في الاعتراف به هو الثمن الإنساني.
+They embarked on an ambitious restoration project.|شرعوا في مشروع ترميم طموح.
+In hindsight, the warning signs were obvious.|بنظرة إلى الوراء، كانت علامات التحذير واضحة.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.C1.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Overlooked Solution","For months, engineers searched for a way to reduce noise in a busy hospital ward, proposing expensive soundproofing and complex electronic devices. It was a cleaner who suggested the simplest remedy: replacing the squeaking wheels on the trolleys. The change cost almost nothing and reduced the noise dramatically. The hospital subsequently introduced a scheme to gather suggestions from all staff, recognising that valuable insight is not confined to those with the loftiest titles.","لأشهر بحث المهندسون عن طريقة لتقليل الضجيج في جناح مزدحم بالمستشفى، واقترحوا عزلاً صوتياً مكلفاً وأجهزة إلكترونية معقدة. وكانت عاملة نظافة هي من اقترحت أبسط علاج: استبدال العجلات الصارّة في العربات. لم يكلف التغيير شيئاً تقريباً وقلل الضجيج بشكل كبير. وأطلقت المستشفى لاحقاً مبادرة لجمع المقترحات من جميع العاملين، إدراكاً منها أن البصيرة القيّمة لا تقتصر على أصحاب أرفع الألقاب.","Who suggested the simplest solution?",["An engineer","A cleaner","A doctor"],1],
+["The Borrowed Opinion","Samir realised, somewhat uncomfortably, that most of his convictions had been inherited rather than examined. He had adopted his views from family, friends, and the media, rarely pausing to question them. Determined to change this, he began reading sources he would previously have dismissed. Some of his beliefs survived the scrutiny, while others dissolved. Either way, he felt that opinions he had tested were more truly his own than those he had merely absorbed.","أدرك سمير، بشيء من الانزعاج، أن معظم قناعاته كانت موروثة لا مفحوصة. كان قد تبنى آراءه من الأسرة والأصدقاء ووسائل الإعلام، ونادراً ما توقف ليتساءل عنها. وعازماً على تغيير ذلك بدأ يقرأ مصادر كان سيتجاهلها من قبل. صمدت بعض معتقداته أمام التدقيق بينما تلاشت أخرى. وفي الحالتين شعر بأن الآراء التي اختبرها هي أكثر ملكية له حقاً من تلك التي امتصها فحسب.","How had Samir acquired most of his views?",["Through his own research","From family, friends and the media","From university"],1]
+].forEach((s,i)=>stories.push({id:"off_c1_b3_"+i,level:"C1",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* C2 - batch 1 */
+(function(){
+`The politician's equivocation did little to allay public suspicion.|لم تفعل مراوغة السياسي شيئاً يُذكر لتبديد شكوك الجمهور.
+Her prose is at once economical and exquisitely evocative.|نثرها مقتصد وموحٍ بشكل رائع في آن واحد.
+The edifice of his argument crumbled under scrutiny.|انهار صرح حجته تحت التدقيق.
+Such magnanimity is rare in public life.|مثل هذا السخاء النبيل نادر في الحياة العامة.
+He espoused views that were anathema to his colleagues.|اعتنق آراءً كانت مكروهة لدى زملائه.
+The treaty, ostensibly a compromise, favoured one party decisively.|المعاهدة، التي بدت حلاً وسطاً ظاهرياً، رجّحت كفة طرف واحد بشكل حاسم.
+It is a truism that hindsight is invariably clearer than foresight.|من البديهي أن الإدراك المتأخر أوضح دائماً من التبصر.
+Her laconic reply spoke volumes.|ردها المقتضب قال الكثير.
+The city's decline was both gradual and insidious.|كان انحدار المدينة تدريجياً وخفياً في آن.
+He exhibited a sanguine disposition in the face of adversity.|أظهر طبعاً متفائلاً في مواجهة الشدائد.
+To dismiss the idea out of hand would be injudicious.|رفض الفكرة جملةً وتفصيلاً سيكون قراراً غير حكيم.
+The memoir is a poignant meditation on loss.|المذكرات تأمل مؤثر في الفقد.
+Scholars remain divided over the manuscript's provenance.|ما زال الباحثون منقسمين حول أصل المخطوطة.
+She possesses an almost preternatural sensitivity to tone.|تمتلك حساسية شبه خارقة تجاه النبرة.
+What the committee lacked in expertise, it made up for in zeal.|ما افتقرت إليه اللجنة من خبرة عوّضته بالحماسة.
+The ephemeral nature of fame is a recurring theme in his work.|الطبيعة الزائلة للشهرة موضوع متكرر في أعماله.
+One would be hard pressed to find a more apt illustration.|سيصعب العثور على مثال أنسب.
+His magnanimous gesture defused a potentially explosive situation.|نزع تصرفه النبيل فتيل موقف كان قابلاً للانفجار.
+The author eschews sentimentality in favour of stark realism.|يتجنب المؤلف العاطفية لصالح واقعية قاسية.
+It would be an egregious oversight to ignore the dissenting voices.|سيكون إغفال الأصوات المعارضة سهواً فادحاً.
+The more he hedged, the less credible he seemed.|كلما تحفظ في كلامه أكثر، بدا أقل مصداقية.
+Her scepticism was tempered by an abiding curiosity.|خفّفت حدة تشككها فضولٌ راسخ.
+The policy's unintended consequences proved to be far-reaching.|تبين أن العواقب غير المقصودة للسياسة بعيدة المدى.
+In its pursuit of efficiency, the system sacrificed humanity.|ضحّى النظام بالإنسانية في سعيه إلى الكفاءة.
+A fleeting expression betrayed her true feelings.|خانتها ملامح عابرة فكشفت مشاعرها الحقيقية.
+The orator's cadences held the crowd spellbound.|أبقت إيقاعات الخطيب الجمهور مسحوراً.
+It is the paradox of progress that it breeds new anxieties.|من مفارقات التقدم أنه يولّد قلقاً جديداً.
+He bore the indignity with remarkable equanimity.|احتمل الإهانة برباطة جأش لافتة.
+The report is damning in its indictment of negligence.|التقرير لاذع في إدانته للإهمال.
+Rarely does a debut novel display such assurance.|نادراً ما تُظهر رواية أولى مثل هذه الثقة.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.C2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["Fidelity and Loss","Marguerite had spent her career translating the work of a reclusive poet whose verse was notorious for its ambiguity. Each line seemed to resist a single reading, and every choice she made foreclosed others. Eventually she came to regard this not as a limitation but as the essence of the task: translation, she realised, is less the transfer of meaning than the careful negotiation of loss. Her versions, though inevitably imperfect, preserved the poet's elusiveness, which she considered the truest form of fidelity.","أمضت مارغريت مسيرتها المهنية في ترجمة أعمال شاعر منعزل اشتهرت قصائده بغموضها. بدا أن كل سطر يأبى قراءة واحدة، وأن كل اختيار تجريه يُغلق الباب أمام غيره. وفي النهاية صارت ترى ذلك لا قيداً بل جوهر المهمة: فالترجمة، كما أدركت، ليست نقل المعنى بقدر ما هي مفاوضة دقيقة على الخسارة. وجاءت نسخها، رغم نقصها الحتمي، محافظة على مراوغة الشاعر، وهو ما اعتبرته أصدق أشكال الأمانة.","How did Marguerite come to view ambiguity?",["As a flaw to be removed","As the essence of the task","As a sign of poor writing"],1],
+["The Weight of Authority","Professor Okafor had long been regarded as an unassailable authority, and his students seldom challenged his pronouncements. One afternoon, a quiet first-year pointed out a flaw in a theorem he had taught for decades. After a moment of palpable tension, Okafor thanked her and corrected the proof on the spot. He later remarked that the incident had taught him an enduring lesson: authority that cannot withstand questioning is merely an inherited habit of deference.","ظل البروفيسور أوكافور زمناً طويلاً يُعدّ مرجعية لا يطالها النقد، وقلما ناقش طلابه تصريحاته. وفي عصر أحد الأيام أشارت طالبة هادئة في سنتها الأولى إلى ثغرة في نظرية درّسها لعقود. وبعد لحظة من التوتر الملموس شكرها أوكافور وصحح البرهان في الحال. وعلّق لاحقاً بأن الحادثة علمته درساً دائماً: السلطة التي لا تصمد أمام التساؤل ليست سوى عادة موروثة من الإذعان.","How did Okafor react to the correction?",["He ignored it","He thanked her and corrected the proof","He dismissed her from class"],1],
+["A Landscape Remembered","Years after leaving the valley, the painter found that his memory had quietly rearranged it: the river ran closer to the house, the hills stood taller, the light was always golden. When he finally returned, the real landscape disappointed him at first, being at once more modest and more complicated than the one he had carried. Yet he began to paint again, no longer attempting to reproduce either version, but to capture the unstable boundary between what is seen and what is remembered.","بعد سنوات من مغادرة الوادي وجد الرسام أن ذاكرته أعادت ترتيبه بهدوء: صار النهر أقرب إلى البيت، وارتفعت التلال أكثر، وبات الضوء ذهبياً دائماً. وعندما عاد أخيراً خيّب المشهد الحقيقي ظنه في البداية، إذ كان أكثر تواضعاً وتعقيداً في آن من المشهد الذي حمله في ذهنه. ومع ذلك عاد إلى الرسم، لا محاولاً استنساخ أي من النسختين، بل ليلتقط الحدود غير المستقرة بين ما يُرى وما يُتذكر.","What did the painter's memory do to the valley?",["It erased it completely","It quietly rearranged it","It made it smaller and darker"],1]
+].forEach((s,i)=>stories.push({id:"off_c2_b1_"+i,level:"C2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* C2 - batch 2 */
+(function(){
+`His prevarication exasperated even his staunchest allies.|أثارت مماطلته غضب حتى أشد حلفائه ولاءً.
+The prose, for all its ornamentation, never obscures the argument.|النثر، رغم زخرفته، لا يحجب الحجة أبداً.
+It was an act of quixotic idealism, doomed from the outset.|كان عملاً من المثالية الحالمة، محكوماً عليه بالفشل من البداية.
+The nuances of diplomacy often elude the uninitiated.|دقائق الدبلوماسية كثيراً ما تغيب عن غير المطلعين.
+She was as perspicacious as she was reticent.|كانت ثاقبة البصيرة بقدر ما كانت متحفظة.
+The ostensible purpose of the visit masked a deeper agenda.|الغرض الظاهري من الزيارة أخفى أجندة أعمق.
+Such pedantry serves only to alienate the reader.|مثل هذا التحذلق لا يخدم سوى إبعاد القارئ.
+He was circumspect in his dealings with the press.|كان حذراً في تعامله مع الصحافة.
+The ruins stood as a mute testament to vanished grandeur.|وقفت الأطلال شاهداً صامتاً على عظمة زائلة.
+Her compassion was neither ostentatious nor conditional.|لم تكن رحمتها استعراضية ولا مشروطة.
+The architecture is an uneasy marriage of the austere and the ornate.|العمارة زواج متوتر بين الصارم والمزخرف.
+He wielded sarcasm like a rapier.|كان يستخدم السخرية كأنها سيف رفيع.
+The consequences of inaction would be dire, if not irreversible.|ستكون عواقب التقاعس وخيمة، إن لم تكن لا رجعة فيها.
+Her indefatigable spirit inspired everyone around her.|ألهمت روحها التي لا تكل كل من حولها.
+The allegory is transparent to all but the most obtuse readers.|الرمزية واضحة لكل القراء إلا أكثرهم بلادة.
+There is something quietly subversive about her humour.|هناك شيء هادئ التخريب في فكاهتها.
+The orchestra's performance was nothing short of transcendent.|لم يكن أداء الأوركسترا أقل من متسامٍ.
+To conflate the two concepts would be a serious error.|الخلط بين المفهومين سيكون خطأً جسيماً.
+He was impervious to flattery and immune to threats.|كان محصناً ضد الإطراء ومنيعاً أمام التهديدات.
+The legacy of colonialism continues to reverberate.|ما زال إرث الاستعمار يتردد صداه.
+Their discourse was characterised by mutual deference.|تميز حوارهما بالاحترام المتبادل.
+The sheer audacity of the scheme took everyone aback.|أذهلت الجرأة الخالصة للمخطط الجميع.
+She distilled decades of experience into a single page.|اختزلت عقوداً من الخبرة في صفحة واحدة.
+It is the unexamined assumption that does the most damage.|الافتراض غير المفحوص هو الذي يسبب أكبر ضرر.
+The sonnet's rigorous form belies its emotional turbulence.|الشكل الصارم للسوناتة يخفي اضطرابها العاطفي.
+He exuded a studied nonchalance that fooled no one.|كان يشع بلامبالاة مصطنعة لم تخدع أحداً.
+Her magnum opus took nearly two decades to complete.|استغرق إنجاز تحفتها الكبرى قرابة عقدين.
+To what extent can empathy be taught?|إلى أي مدى يمكن تعليم التعاطف؟
+The verdict was greeted with a mixture of relief and trepidation.|قوبل الحكم بمزيج من الارتياح والتوجس.
+Whatever his failings, he was never craven.|مهما كانت عيوبه، لم يكن جباناً قط.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.C2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Cost of Certainty","Dr. Halloran had built his reputation on unwavering conviction, and colleagues admired the clarity with which he pronounced on complex matters. Yet when new data contradicted his central hypothesis, he found himself tempted to explain it away. After a sleepless week, he published a retraction instead, acknowledging his error in unambiguous terms. The scientific community responded not with contempt but with deepened respect, recognising that the willingness to be wrong is the foundation of genuine inquiry.","بنى الدكتور هالوران سمعته على قناعة لا تتزعزع، وأعجب زملاؤه بالوضوح الذي كان يحكم به في المسائل المعقدة. ومع ذلك، حين ناقضت بيانات جديدة فرضيته المركزية، وجد نفسه مغرياً بتبريرها. وبعد أسبوع بلا نوم نشر تراجعاً بدلاً من ذلك، معترفاً بخطئه بعبارات لا لبس فيها. ولم تستجب الأوساط العلمية بازدراء بل بتقدير أعمق، إدراكاً منها أن الاستعداد لأن يكون المرء مخطئاً هو أساس البحث الحقيقي.","How did the scientific community respond?",["With contempt","With deepened respect","With indifference"],1],
+["An Inheritance of Silence","In Leila's family, certain subjects were never discussed: a great-uncle who had vanished, a house that had been sold under mysterious circumstances. As a child she had accepted these silences as natural features of the household. Only as an adult, rummaging through her late mother's papers, did she grasp that they had been protective rather than empty. Each omission concealed a grief that her relatives had judged too heavy to hand down, and she wondered whether such mercy had, in the end, been kindness or evasion.","في أسرة ليلى كانت موضوعات معينة لا تُناقش أبداً: عم جد اختفى، وبيت بيع في ظروف غامضة. وفي طفولتها قبلت هذه الصمتات كملامح طبيعية للبيت. ولم تدرك إلا وهي بالغة، وهي تقلّب أوراق والدتها الراحلة، أنها كانت حمائية لا فارغة. فكل إغفال كان يخفي حزناً رأى أقاربها أنه أثقل من أن يُورَّث، وتساءلت هل كانت تلك الرحمة، في النهاية، لطفاً أم تهرباً.","When did Leila understand the silences?",["As a child","As an adult, reading her mother's papers","She never did"],1],
+["The Archivist of Small Things","Ingrid catalogued objects that museums considered too insignificant to display: buttons, ticket stubs, handwritten recipes. Visitors often asked why she devoted herself to such trivia. She replied that grand events were already documented exhaustively, whereas the texture of ordinary lives was disappearing unrecorded. Over time, researchers discovered that her collection illuminated social history in ways official records could not, revealing habits, anxieties, and affections that no formal document had thought worth preserving.","كانت إنغريد تفهرس أشياء رأت المتاحف أنها أتفه من أن تُعرض: أزرار وبقايا تذاكر ووصفات مكتوبة بخط اليد. وكثيراً ما سألها الزوار لماذا تكرس نفسها لمثل هذه التفاصيل. وكانت ترد بأن الأحداث الكبرى موثقة بإسهاب، بينما يضيع نسيج الحيوات العادية دون تسجيل. ومع الوقت اكتشف الباحثون أن مجموعتها تضيء التاريخ الاجتماعي بطرق لم تستطعها السجلات الرسمية، إذ كشفت عادات ومخاوف ومودات لم ترَ أي وثيقة رسمية أنها تستحق الحفظ.","Why did Ingrid collect small objects?",["Grand events were already well documented","They were valuable","Museums paid her"],0]
+].forEach((s,i)=>stories.push({id:"off_c2_b2_"+i,level:"C2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* C2 - batch 3 */
+(function(){
+`The documentary eschews narration, letting the images speak.|يتجنب الفيلم الوثائقي التعليق الصوتي، تاركاً الصور تتكلم.
+His rhetoric was more incendiary than illuminating.|كانت خطابته أكثر إشعالاً منها إنارة.
+She greeted the accolades with characteristic modesty.|استقبلت الإشادات بتواضعها المعهود.
+The truth, as ever, lies somewhere in the interstices.|الحقيقة، كالعادة، تكمن في مكان ما بين الفجوات.
+He was a consummate professional, unruffled by adversity.|كان محترفاً بارعاً، لا تهزه الشدائد.
+The poem's elegiac tone pervades every stanza.|النبرة الرثائية للقصيدة تتخلل كل مقطع.
+Nothing is more insidious than complacency.|لا شيء أخفى من الرضا عن الذات.
+The regime's veneer of legitimacy was wearing thin.|كان قناع الشرعية الذي يرتديه النظام يبلى.
+Her erudition was matched only by her humility.|لم يضاهِ سعة علمها إلا تواضعها.
+The two thinkers occupy diametrically opposed positions.|يقف المفكران في موقعين متعاكسين تماماً.
+It is precisely this ambivalence that makes the character compelling.|هذا التردد بالتحديد هو ما يجعل الشخصية آسرة.
+He relinquished power with uncommon grace.|تخلى عن السلطة بلباقة نادرة.
+The exhibition is a salutary reminder of our fragility.|المعرض تذكير نافع بهشاشتنا.
+She wrote with a lucidity that belied the subject's complexity.|كتبت بوضوح يخفي تعقيد الموضوع.
+The cacophony of the market assaulted the senses.|هاجمت جلبة السوق الحواس.
+The mere suggestion was tantamount to an accusation.|كان مجرد التلميح يعادل اتهاماً.
+His reputation for probity remained unblemished.|ظلت سمعته في النزاهة نقية من الشوائب.
+To speak of progress without asking for whom is disingenuous.|الحديث عن التقدم دون السؤال عن المستفيد منه غير صادق.
+The play subverts the conventions it appears to embrace.|المسرحية تقوض الأعراف التي تبدو أنها تعتنقها.
+Time, that great leveller, spares no ambition.|الزمن، ذلك المسوّي العظيم، لا يستثني طموحاً.
+She exercised her authority with scrupulous fairness.|مارست سلطتها بعدالة دقيقة.
+The vestiges of the old order lingered stubbornly.|ظلت بقايا النظام القديم عالقة بعناد.
+He regarded the compliment with wary amusement.|تلقى المجاملة بتسلية حذرة.
+The film resists easy categorisation.|يأبى الفيلم التصنيف السهل.
+Only in solitude did she find the clarity she craved.|لم تجد الصفاء الذي تشتاق إليه إلا في العزلة.
+There is a certain dignity in unadorned honesty.|هناك كرامة معينة في الصدق غير المزخرف.
+What endures is rarely what was loudest.|ما يدوم نادراً ما يكون الأعلى صوتاً.`.split("\n").forEach(l=>{const p=l.split("|");if(p.length===2)shadowingSentences.C2.push({en:p[0].trim(),ar:p[1].trim()});});
+[
+["The Last Lecture","Professor Adler had planned his farewell lecture for months, intending to summarise a lifetime of scholarship. On the day itself, however, he abandoned his notes. He spoke instead about the questions he had never resolved, the arguments in which he had been mistaken, and the students whose insights had overturned his own. The audience, accustomed to certainty, sat in rapt silence. Afterwards, many remarked that they had never heard a scholar speak so truthfully about the limits of knowledge.","خطط البروفيسور أدلر لمحاضرته الوداعية لأشهر، ناوياً تلخيص مسيرة علمية كاملة. لكنه في اليوم نفسه تخلى عن ملاحظاته. وتحدث بدلاً من ذلك عن الأسئلة التي لم يحسمها قط، والحجج التي أخطأ فيها، والطلاب الذين قلبت رؤاهم رؤاه رأساً على عقب. وجلس الجمهور، المعتاد على اليقين، في صمت مشدوه. وبعد ذلك علّق كثيرون بأنهم لم يسمعوا قط عالماً يتحدث بمثل هذه الصراحة عن حدود المعرفة.","What did Adler talk about instead of his notes?",["His unresolved questions and mistakes","His awards","His retirement plans"],0],
+["Roads Unchosen","Late in life, Nasreen found herself contemplating the decisions she had not made: the scholarship she had declined, the city she had never visited. For a time, these imagined lives haunted her with a pang of envy. Gradually, however, she came to see that she had been comparing a vivid, imperfect reality with an idealised fiction that had never been tested by disappointment. Her regret softened into gratitude, and she resolved to inhabit her actual life more attentively.","في مرحلة متأخرة من عمرها وجدت نسرين نفسها تتأمل القرارات التي لم تتخذها: المنحة التي رفضتها والمدينة التي لم تزرها قط. ولفترة طاردتها تلك الحيوات المتخيلة بوخزة حسد. لكنها أدركت تدريجياً أنها كانت تقارن واقعاً حياً ناقصاً بخيال مثالي لم يختبره خيبة أمل قط. فلان ندمها إلى امتنان، وعزمت على أن تعيش حياتها الفعلية بانتباه أكبر.","How did Nasreen's regret change?",["It turned into gratitude","It grew stronger","It disappeared completely"],0]
+].forEach((s,i)=>stories.push({id:"off_c2_b3_"+i,level:"C2",title:s[0],en:s[1],ar:s[2],words:[],q:[{q:s[3],a:s[4],c:s[5]}]}));
+})();
+
+/* New words for every story + big daily vocabulary pool */
+(function(){
+const W=`My Family#father|أب|My father is kind.#teacher|معلم / معلمة|She is a good teacher.#dinner|العشاء|We eat dinner at eight.
+A Day at the Park#park|حديقة عامة|We walk in the park.#sunny|مشمس|It is a sunny day.#sandwich|ساندويتش|I eat a sandwich for lunch.
+The New Shirt#shirt|قميص|He wears a white shirt.#expensive|غالٍ|This bag is expensive.#shop|محل|The shop is open.
+At the Doctor#headache|صداع|I have a headache.#rest|يستريح|Please rest at home.#better|أفضل|I feel better today.
+My Best Friend#smile|ابتسامة|She has a nice smile.#together|معاً|We play together.#twelve|اثنا عشر|He is twelve years old.
+A Rainy Day#rainy|ممطر|It is a rainy day.#rainbow|قوس قزح|I see a rainbow.#picture|صورة|He draws a picture.
+The Bakery#bakery|مخبز|The bakery opens early.#fresh|طازج|The bread is fresh.#baker|خباز|The baker is kind.
+The Library#quiet|هادئ|The library is quiet.#animals|حيوانات|I like animals.#hour|ساعة|I read for one hour.
+Dinner with Grandma#grandmother|جدة|My grandmother is kind.#smell|رائحة / يشم|The food smells good.#visit|يزور|We visit her on Saturday.
+At the Market#seller|بائع|The seller is friendly.#price|سعر|The price is low.#agree|يوافق|I agree with you.
+The Lost Key#pocket|جيب|My phone is in my pocket.#kitchen|مطبخ|She cooks in the kitchen.#laugh|يضحك|We laugh together.
+A Birthday Surprise#surprised|متفاجئ|I was surprised by the news.#forget|ينسى|Don't forget your book.#cake|كعكة|We eat birthday cake.
+The Bus to the City#museum|متحف|We visit the museum.#ticket|تذكرة|I buy a ticket.#bus stop|موقف الحافلات|I wait at the bus stop.
+The Football Match#match|مباراة|The match starts at six.#goal|هدف|He scored a goal.#strong|قوي|The other team is strong.
+A Quiet Weekend#relax|يسترخي|I relax at home.#pasta|معكرونة|We cook pasta.#ready|جاهز|I am ready for work.
+The New Phone#compare|يقارن|Compare the prices first.#slow|بطيء|The internet is slow.#fair|معقول / عادل|It is a fair price.
+The Language Class#shy|خجول|She is shy at first.#partner|زميل / شريك|Talk to your partner.#confident|واثق|I feel confident now.
+A Walk by the River#river|نهر|The river is calm.#calm|هادئ|The sea is calm today.#weather|الطقس|The weather is nice.
+The Lost Wallet#wallet|محفظة|I lost my wallet.#owner|مالك|The owner is happy.#reward|مكافأة|Honesty is its own reward.
+The Job Offer#flexible|مرن|I have flexible hours.#salary|راتب|The salary is good.#discuss|يناقش|Let's discuss the plan.
+The Old Photograph#attic|علّية|Old boxes are in the attic.#recognise|يتعرف على|I did not recognise him.#record|يسجّل|She recorded the stories.
+The Marathon#distance|مسافة|The distance is long.#cheer|يهتف / يشجع|The crowd cheered loudly.#finish line|خط النهاية|He crossed the finish line.
+The Street Musician#elderly|مسن|An elderly man helped me.#gesture|تصرف / إيماءة|It was a kind gesture.#encourage|يشجّع|Her words encouraged me.
+A Surprise Inspection#inspector|مفتش|The inspector arrived today.#criticise|ينتقد|Don't criticise others.#maintain|يحافظ على|Maintain good habits.
+Learning from Failure#fail|يفشل / يرسب|I failed the first test.#embarrassed|محرج|I felt embarrassed.#attempt|محاولة|On my third attempt, I passed.
+The Garden Project#resident|ساكن|The residents met on Sunday.#neighbour|جار|My neighbour is kind.#share|يتشارك|We share the tools.
+The Wrong Train#conductor|مراقب القطار|The conductor helped us.#realise|يدرك|I realised my mistake.#patiently|بصبر|She waited patiently.
+The Quiet Neighbour#assume|يفترض|Don't assume the worst.#candle|شمعة|Light a candle.#completely|تماماً|I completely agree.
+The Remote Village#remote|نائي|It is a remote village.#scholarship|منحة دراسية|She won a scholarship.#contribute|يساهم|Everyone contributed.
+The Honest Review#harsh|قاسٍ|It was a harsh comment.#valid|وجيه / صحيح|That is a valid point.#openness|انفتاح|I admire her openness.
+The Last Day of Summer#forecast|توقعات الطقس|The forecast says rain.#deserted|مهجور / خالٍ|We found a deserted beach.#memorable|لا يُنسى|It was a memorable evening.
+The Translator#freelance|يعمل لحسابه الخاص|He is a freelance writer.#capture|يلتقط / ينقل|The photo captured the mood.#judgement|حكم / تقدير|Trust my judgement.
+The Debate Team#humiliated|مُهان|I felt humiliated.#feedback|ملاحظات|Ask for honest feedback.#represent|يمثّل|He represents the school.
+The Power Cut#generator|مولّد كهرباء|They repaired the generator.#organise|ينظّم|She organised the event.#closeness|قرب / ألفة|The closeness did not last.
+The Midnight Call#stranded|عالق|We were stranded in town.#exhausted|منهك|I am exhausted.#admit|يعترف|He admitted his mistake.
+The Chess Club#tournament|بطولة|We joined a chess tournament.#patience|صبر|Learning needs patience.#gracefully|بكياسة|Learn to lose gracefully.
+The Weight of Words#remark|تعليق|It was a careless remark.#linger|يبقى عالقاً|The memory still lingers.#casual|عابر / غير رسمي|He made a casual comment.
+The Archive#archivist|أمين أرشيف|The archivist found old letters.#exhibition|معرض|We visited the exhibition.#modest|متواضع|She gave a modest reply.
+A Question of Trust#conceal|يخفي|Do not conceal the truth.#credibility|مصداقية|Protect your credibility.#candour|صراحة|I appreciate your candour.
+The Silent Observer#indifference|لامبالاة|He showed complete indifference.#underlying|كامن / أساسي|We found the underlying cause.#ironic|مفارق / ساخر|It is ironic, isn't it?
+The Cartographer#obsolete|عفا عليه الزمن|The old tool is obsolete.#indispensable|لا غنى عنه|She is indispensable to the team.#rescuer|منقذ|The rescuers arrived at dawn.
+The Unspoken Rule#convention|عُرف|It is a social convention.#decipher|يفك شفرة|Can you decipher this note?#awkwardness|إحراج|Avoid unnecessary awkwardness.
+The Weight of Memory#dismayed|مستاء / مذهول|I was dismayed by the news.#illusion|وهم|Happiness is not an illusion.#endure|يدوم / يتحمّل|Good memories endure.
+The Overlooked Solution#remedy|علاج / حل|There is a simple remedy.#subsequently|لاحقاً|He subsequently moved abroad.#confined|مقتصر|The problem is not confined to us.
+The Borrowed Opinion#conviction|قناعة|It is a strong conviction.#scrutiny|تدقيق|The plan faced scrutiny.#absorb|يمتص / يستوعب|Children absorb new ideas quickly.
+The Unfinished Manuscript#manuscript|مخطوطة|He found an old manuscript.#posterity|الأجيال القادمة|Preserve it for posterity.#sanction|يجيز / يأذن|The board sanctioned the plan.
+Fidelity and Loss#ambiguity|غموض|Ambiguity can confuse readers.#fidelity|أمانة / دقة|Translate with fidelity.#elusive|مراوغ / عصيّ|Success remained elusive.
+The Weight of Authority#unassailable|لا يمكن الطعن فيه|He held an unassailable position.#deference|إذعان / احترام|They spoke with deference.#palpable|ملموس|There was palpable tension.
+A Landscape Remembered#landscape|منظر طبيعي|A beautiful landscape.#idealised|مثالي / مُجمَّل|She had an idealised view of life.#boundary|حد فاصل|Where is the boundary?
+The Cost of Certainty#retraction|تراجع / سحب|The paper issued a retraction.#hypothesis|فرضية|Let's test the hypothesis.#inquiry|بحث / استقصاء|Scientific inquiry needs doubt.
+An Inheritance of Silence#omission|إغفال|It was a serious omission.#evasion|تهرّب|His answer was an evasion.#grief|حزن عميق|She felt deep grief.
+The Archivist of Small Things#catalogue|يفهرس|They catalogue every object.#trivia|تفاصيل تافهة|It is only trivia.#illuminate|يضيء / يوضّح|The letters illuminate the past.
+The Last Lecture#farewell|وداع|He gave a farewell speech.#rapt|مشدوه / مستغرق|The class listened with rapt attention.#overturn|يقلب / يُبطل|The court may overturn the ruling.
+Roads Unchosen#contemplate|يتأمل|I contemplate my choices.#envy|حسد|She felt a pang of envy.#gratitude|امتنان|I feel deep gratitude.`;
+const map={};
+W.split("\n").forEach(line=>{
+const parts=line.split("#");const title=parts.shift().trim();
+map[title]=parts.map(x=>x.split("|").map(y=>y.trim())).filter(x=>x.length===3);
+});
+stories.forEach(s=>{if((!s.words||!s.words.length)&&map[s.title])s.words=map[s.title];});
+})();
+
+let _vocabPool=null;
+function getVocabPool(){
+if(_vocabPool)return _vocabPool;
+const seen={},list=[];
+function add(w){if(!w||w.length<3)return;const k=w[0].toLowerCase();if(seen[k])return;seen[k]=1;list.push(w);}
+words.forEach(add);
+stories.forEach(s=>(s.words||[]).forEach(add));
+let seed=20240601;
+function rnd(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
+for(let i=list.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));const x=list[i];list[i]=list[j];list[j]=x;}
+_vocabPool=list;
+return list;
+}
+wordIndex=Math.floor(Date.now()/86400000)%getVocabPool().length;
+
+window.onload=function(){
+renderStories();
+renderWord();
+showProgress();
+changeShadowLevel();
+};
+</script>
+</body>
+</html>
