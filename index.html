@@ -55,7 +55,7 @@ footer{text-align:center;color:#64748b;padding:15px}
 
 <section>
 <h2>🎯 English Level Test</h2>
-<p>Answer grammar and listening questions to find your level from A1 to C2. Turn your sound on. The test stops when a level becomes too hard.</p>
+<p>36 questions in two parts, like the Oxford and Cambridge placement tests: Grammar &amp; Vocabulary, and Listening. Each level has 6 questions and you need 4 correct to pass it. Turn your sound on. The test stops when a level becomes too hard.</p>
 <button onclick="startTest()">Start Level Test</button>
 <div id="testArea"></div>
 </section>
@@ -500,37 +500,44 @@ play();
 }
 
 const TEST_LEVELS=["A1","A2","B1","B2","C1","C2"];
+const PASS=4;
 const questions=[
-{l:"A1",q:"I ___ a student.",a:["am","is","are"],c:0},
-{l:"A1",q:"She ___ to school every day.",a:["go","goes","going"],c:1},
-{l:"A1",q:"What is the opposite of 'hot'?",a:["Cold","Tall","Fast"],c:0},
-{l:"A1",audio:"My brother has a red bike.",q:"What did you hear?",a:["My brother has a red bike.","My mother has a red bag.","My brother has a blue bike."],c:0},
-{l:"A1",audio:"Sara wakes up at seven and drinks tea.",q:"What does Sara drink?",a:["Tea","Milk","Water"],c:0},
-{l:"A2",q:"Yesterday, I ___ my friend.",a:["see","saw","seen"],c:1},
-{l:"A2",q:"I have lived here ___ 2020.",a:["for","since","during"],c:1},
-{l:"A2",q:"She is interested ___ music.",a:["on","at","in"],c:2},
-{l:"A2",audio:"We are going to visit my uncle tomorrow.",q:"When are they visiting the uncle?",a:["Yesterday","Tomorrow","Next year"],c:1},
-{l:"A2",audio:"The bus to the city centre leaves at half past nine.",q:"What time does the bus leave?",a:["9:30","9:15","10:30"],c:0},
-{l:"B1",q:"If I had more time, I ___ travel.",a:["will","would","can"],c:1},
-{l:"B1",q:"The letter ___ yesterday.",a:["sent","was sent","is sending"],c:1},
-{l:"B1",q:"Despite ___ tired, he continued.",a:["being","was","be"],c:0},
-{l:"B1",audio:"I missed the bus because I stopped to buy water, so I arrived ten minutes late.",q:"Why was the speaker late?",a:["The bus was cancelled","He stopped to buy water","He woke up late"],c:1},
-{l:"B1",audio:"I'd like to book a table for two at eight o'clock, please.",q:"What does the speaker want?",a:["To order food","To book a table","To cancel a meeting"],c:1},
-{l:"B2",q:"The meeting was postponed ___ the storm.",a:["due to","although","unless"],c:0},
-{l:"B2",q:"Her explanation was clear and ___.",a:["persuade","persuasive","persuasion"],c:1},
-{l:"B2",q:"Not only ___ late, but he also forgot the documents.",a:["he was","was he","did he"],c:1},
-{l:"B2",audio:"Although the proposal was ambitious, the board rejected it because of the cost.",q:"Why was the proposal rejected?",a:["It was too simple","Because of the cost","Nobody read it"],c:1},
-{l:"B2",audio:"Had I known about the delay, I would have taken an earlier train.",q:"What does the speaker mean?",a:["He knew about the delay","He did not know about the delay","He took an earlier train"],c:1},
-{l:"C1",q:"The findings were ___ with earlier research.",a:["consistent","consist","consistency"],c:0},
-{l:"C1",q:"Rarely ___ such a compelling argument.",a:["I have heard","have I heard","I heard"],c:1},
-{l:"C1",q:"Had she ___ the risks, she would never have agreed.",a:["known","knew","know"],c:0},
-{l:"C1",audio:"The committee, though sceptical at first, was eventually persuaded by the evidence.",q:"How did the committee change?",a:["It was convinced by the evidence","It became more doubtful","It ignored the evidence"],c:0},
-{l:"C1",audio:"Rather than blaming her team, she accepted full responsibility for the failure.",q:"What did she do?",a:["She blamed her team","She took responsibility","She resigned"],c:1},
-{l:"C2",q:"It is imperative that he ___ the report by Friday.",a:["submits","submit","submitted"],c:1},
-{l:"C2",q:"Scarcely had we arrived ___ the rain began.",a:["than","when","that"],c:1},
-{l:"C2",q:"___ unusual it may seem, the policy proved effective.",a:["However","Although","Despite"],c:0},
-{l:"C2",audio:"His laconic reply, far from clarifying matters, only deepened the confusion.",q:"What was the effect of his reply?",a:["It clarified everything","It increased the confusion","It ended the discussion"],c:1},
-{l:"C2",audio:"The treaty was ostensibly a compromise, yet it favoured one party decisively.",q:"What does the speaker imply?",a:["The treaty was truly fair","The treaty seemed fair but was not","The treaty was rejected"],c:1}
+{l:"A1",q:"My sister ___ a doctor.",a:["am","is","are","be"],c:1},
+{l:"A1",q:"There ___ two books on the table.",a:["is","are","am","be"],c:1},
+{l:"A1",q:"You wear it on your head. It is a ___.",a:["hat","shoe","sock","glove"],c:0},
+{l:"A1",audio:"My name is Omar. I am twenty years old.",q:"How old is Omar?",a:["Twelve","Twenty","Thirty","Twenty-two"],c:1},
+{l:"A1",audio:"The shop opens at nine and closes at six.",q:"When does the shop open?",a:["At six","At nine","At five","At seven"],c:1},
+{l:"A1",audio:"I have a brother and two sisters.",q:"How many sisters does the speaker have?",a:["One","Two","Three","None"],c:1},
+{l:"A2",q:"I ___ to the cinema last night.",a:["go","went","gone","going"],c:1},
+{l:"A2",q:"She is ___ than her brother.",a:["more tall","taller","tallest","most tall"],c:1},
+{l:"A2",q:"We ___ dinner when the phone rang.",a:["were having","have","had been","are having"],c:0},
+{l:"A2",audio:"I'm sorry I'm late. The bus was twenty minutes behind.",q:"Why is the speaker late?",a:["He woke up late","The bus was late","He lost his key","It was raining"],c:1},
+{l:"A2",audio:"Can I have two tickets for the seven o'clock film, please?",q:"What does the speaker want?",a:["Two tickets for a film","A table for seven","Two coffees","A taxi at seven"],c:0},
+{l:"A2",audio:"It was cold on Saturday, so we stayed at home and watched television.",q:"What did they do on Saturday?",a:["Went swimming","Watched television at home","Visited friends","Went shopping"],c:1},
+{l:"B1",q:"If I ___ you, I would talk to the manager.",a:["am","were","was","will be"],c:1},
+{l:"B1",q:"She asked me ___ I had finished the report.",a:["that","whether","what","which"],c:1},
+{l:"B1",q:"The company decided to ___ the meeting until next week because the director was ill.",a:["postpone","prevent","provide","protect"],c:0},
+{l:"B1",audio:"I was going to call you earlier, but my phone ran out of battery.",q:"Why didn't the speaker call?",a:["He forgot your number","His phone had no battery","He was too busy","He lost his phone"],c:1},
+{l:"B1",audio:"The train to Manchester has been delayed by about forty minutes because of a signal problem.",q:"What is the problem?",a:["The train is cancelled","A signal problem has caused a delay","The station is closed","The train is full"],c:1},
+{l:"B1",audio:"I'd rather work from home on Fridays, but my manager prefers us to come into the office.",q:"What is the speaker's preference?",a:["Working in the office","Working from home on Fridays","Working on weekends","Changing jobs"],c:1},
+{l:"B2",q:"By the time we arrived, the film ___.",a:["already started","had already started","has already started","was already starting"],c:1},
+{l:"B2",q:"He denied ___ the window.",a:["to break","breaking","to have broken","break"],c:1},
+{l:"B2",q:"The results were ___ with our expectations; we had predicted exactly this.",a:["consistent","persistent","resistant","insistent"],c:0},
+{l:"B2",audio:"Although the hotel was cheaper than we expected, the service left a lot to be desired.",q:"What does the speaker think of the hotel?",a:["The price and service were both good","It was cheap but the service was poor","It was expensive but the service was excellent","The price was higher than expected"],c:1},
+{l:"B2",audio:"I wouldn't have taken the job if I'd known how much travelling it involved.",q:"What does the speaker mean?",a:["He knew about the travelling","He did not know about the travelling when he accepted","He refused the job","He enjoys travelling"],c:1},
+{l:"B2",audio:"The manager insisted that the report be finished by Friday, though she admitted the deadline was tight.",q:"What did the manager admit?",a:["The report was unnecessary","The deadline was tight","The report was finished","Friday was a holiday"],c:1},
+{l:"C1",q:"Hardly ___ the building when the alarm went off.",a:["he had entered","had he entered","he entered","did he enter"],c:1},
+{l:"C1",q:"The committee's decision has been met with ___ criticism from both sides.",a:["scarce","scathing","scanty","scanted"],c:1},
+{l:"C1",q:"It's high time the government ___ something about housing costs.",a:["does","did","will do","has done"],c:1},
+{l:"C1",audio:"Far from being a setback, the delay gave the team an opportunity to rethink its whole approach.",q:"How does the speaker view the delay?",a:["As a disaster","As a useful chance","As the team's fault","As irrelevant"],c:1},
+{l:"C1",audio:"She was reluctant to criticise her colleagues openly, preferring instead to raise concerns in private.",q:"How did she handle her concerns?",a:["She raised them privately","She criticised openly","She ignored them","She reported them in public"],c:0},
+{l:"C1",audio:"The findings, while intriguing, shouldn't be taken as conclusive until they've been independently replicated.",q:"What does the speaker suggest?",a:["The findings are definitely correct","More independent confirmation is needed","The findings are boring","The research should be stopped"],c:1},
+{l:"C2",q:"Not until the committee had reviewed the evidence ___ its verdict.",a:["it announced","did it announce","it did announce","announced it"],c:1},
+{l:"C2",q:"His remarks, though ostensibly conciliatory, were ___ with veiled hostility.",a:["fraught","frayed","fraudulent","frantic"],c:0},
+{l:"C2",q:"The senator's evasive answer only served to ___ suspicions.",a:["exacerbate","alleviate","dissipate","mitigate"],c:0},
+{l:"C2",audio:"Her argument, however eloquently presented, rested on assumptions that were never properly examined.",q:"What is the speaker's criticism?",a:["The argument was badly presented","The assumptions were not examined","The argument was too short","The audience was uninterested"],c:1},
+{l:"C2",audio:"Rather than dispel the rumours, his silence merely lent them credence.",q:"What effect did his silence have?",a:["It ended the rumours","It made the rumours seem more believable","It angered his critics","It proved he was innocent"],c:1},
+{l:"C2",audio:"The author's prose is spare to the point of austerity, yet it conveys a startling emotional force.",q:"What does the speaker say about the prose?",a:["It is long and decorative","It is plain but emotionally powerful","It is hard to understand","It is full of humour"],c:1}
 ];
 
 let testOrder=[],testPos=0,testAnswers=[];
@@ -546,12 +553,19 @@ testOrder.forEach((id,i)=>{if(questions[id].l===l&&testAnswers[i]===questions[id
 return s;
 }
 
+function levelPassed(l){
+let ans=0,right=0,skip=0;
+testOrder.forEach((id,i)=>{const q=questions[id];if(q.l!==l||testAnswers[i]===undefined)return;if(testAnswers[i]===-1){skip++;return;}ans++;if(testAnswers[i]===q.c)right++;});
+if(skip>0)return ans>=3&&right===ans;
+return right>=PASS;
+}
+
 function renderTestQuestion(){
 const q=questions[testOrder[testPos]],area=document.getElementById("testArea");
 const isL=!!q.audio;
 const last=testPos===testOrder.length-1;
 area.innerHTML='<p>Question '+(testPos+1)+' • <span class="lvbadge lv-'+q.l+'">Level '+q.l+'</span></p><div class="progress"><div style="width:'+(testPos/testOrder.length*100)+'%"></div></div>'+
-'<h3>'+(isL?"🎧 Listening":"📝 Grammar")+'</h3>'+
+'<h3>'+(isL?"🎧 Listening":"📝 Grammar & Vocabulary")+'</h3>'+
 (isL?'<button id="testPlay" type="button">🔊 Play audio</button><p class="small">Play it as many times as you like. Needs internet and sound on.</p>':"")+
 '<p><b id="testQText"></b></p><div id="testOptions"></div><p id="testFeedback"></p>'+
 (isL?'<button id="testSkip" class="secondary" type="button">Skip (I cannot hear)</button>':"")+
@@ -560,7 +574,7 @@ document.getElementById("testQText").textContent=q.q;
 if(isL){document.getElementById("testPlay").onclick=()=>speak(q.audio);}
 const finish=(chosen)=>{
 testAnswers[testPos]=chosen;
-document.querySelectorAll("#testOptions button").forEach((x,j)=>{x.disabled=true;if(j===q.c)x.classList.add("correct");});
+document.querySelectorAll("#testOptions button").forEach(x=>{x.disabled=true;if(Number(x.dataset.i)===q.c)x.classList.add("correct");});
 const fb=document.getElementById("testFeedback");
 if(chosen===q.c)fb.textContent="Correct! ✓";
 else if(chosen===-1)fb.textContent="Skipped. Correct answer: "+q.a[q.c];
@@ -569,8 +583,10 @@ if(isL)fb.textContent+="  |  Audio said: "+q.audio;
 if(isL)document.getElementById("testSkip").disabled=true;
 document.getElementById("testNext").disabled=false;
 };
-q.a.forEach((a,i)=>{
-const b=document.createElement("button");b.className="option";b.textContent=a;
+const order=q.a.map((_,i)=>i);
+for(let k=order.length-1;k>0;k--){const r=Math.floor(Math.random()*(k+1));const t=order[k];order[k]=order[r];order[r]=t;}
+order.forEach(i=>{
+const b=document.createElement("button");b.className="option";b.textContent=q.a[i];b.dataset.i=i;
 b.onclick=()=>{
 if(testAnswers[testPos]!==undefined)return;
 if(i!==q.c)b.classList.add("wrong");
@@ -586,7 +602,7 @@ const prev=questions[testOrder[testPos]];
 testPos++;
 const nextQ=testPos<testOrder.length?questions[testOrder[testPos]]:null;
 const levelEnded=!nextQ||nextQ.l!==prev.l;
-if(nextQ&&!(levelEnded&&levelScore(prev.l)<3)){renderTestQuestion();return;}
+if(nextQ&&!(levelEnded&&!levelPassed(prev.l))){renderTestQuestion();return;}
 finishTest();
 }
 
@@ -597,24 +613,38 @@ renderStories();changeShadowLevel();
 document.getElementById("storyList").scrollIntoView({behavior:"smooth"});
 }
 
+function skillLevel(isListen){
+let lv="below A1",ok=true;
+TEST_LEVELS.forEach(l=>{
+const idx=[];
+testOrder.slice(0,testPos).forEach((id,i)=>{const q=questions[id];if(q.l===l&&!!q.audio===isListen)idx.push(i);});
+if(!idx.length||!ok)return;
+const s=idx.filter(i=>testAnswers[i]===questions[testOrder[i]].c).length;
+if(s>=2)lv=l;else ok=false;
+});
+return lv;
+}
+
 function finishTest(){
 const done=testOrder.slice(0,testPos);
-let placed="A1",ok=true,total=0,asked=0;
+let placed="A1",ok=true,total=0,asked=0,any=false;
 const detail=[];
 TEST_LEVELS.forEach(l=>{
 const n=questions.filter(q=>q.l===l).length;
 if(!done.some(id=>questions[id].l===l))return;
 const s=levelScore(l);total+=s;asked+=n;
 detail.push(l+": "+s+"/"+n);
-if(ok&&s>=3)placed=l;else ok=false;
+if(ok&&levelPassed(l)){placed=l;any=true;}else ok=false;
 });
-const g=[0,0],li=[0,0];
-done.forEach((id,i)=>{const q=questions[id];const t=q.audio?li:g;t[1]++;if(testAnswers[i]===q.c)t[0]++;});
-const extra="Grammar "+g[0]+"/"+g[1]+" • Listening "+li[0]+"/"+li[1];
+const skipped=done.some((id,i)=>testAnswers[i]===-1);
+const border=any&&!skipped&&levelScore(placed)===PASS;
+const grammar=skillLevel(false),listening=skillLevel(true);
+const skills="Grammar & Vocabulary: "+grammar+" • Listening: "+listening;
 store("test_score",total+"/"+asked);
 store("test_level",placed);
-store("test_detail",detail.join(" • ")+" | "+extra);
-document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+total+' / '+asked+'</p><p>Estimated level: <span class="lvbadge lv-'+placed+'">'+placed+'</span></p><p class="small">'+detail.join(" • ")+'</p><p class="small">'+extra+'</p><p class="small">You pass a level with 3 correct answers out of 5. If you skipped listening questions, your real level may be higher.</p><button type="button" onclick="useLevel(\''+placed+'\')">📚 Start stories at my level ('+placed+')</button>';
+store("test_detail",detail.join(" • ")+" | "+skills);
+let note=skipped?"You skipped some listening questions, so this result is based mostly on grammar and vocabulary. Take the test again with sound for a fuller result.":any?(border?"Borderline result: you passed this level with the minimum score, so you may be between "+placed+" and the level below it.":"Solid result for this level."):"You are at the beginning of A1. Start with the A1 stories.";
+document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+total+' / '+asked+'</p><p>Estimated level: <span class="lvbadge lv-'+placed+'">'+placed+'</span></p><p class="small">'+note+'</p><p class="small">'+detail.join(" • ")+'</p><p class="small">'+skills+'</p><p class="small">You pass a level with '+PASS+' correct answers out of 6. This is an estimate, not an official certificate. For an official check, try the free EF SET (efset.org) or the British Council level test.</p><button type="button" onclick="useLevel(\''+placed+'\')">📚 Start stories at my level ('+placed+')</button>';
 showProgress();
 }
 
