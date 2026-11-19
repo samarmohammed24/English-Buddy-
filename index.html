@@ -28,6 +28,8 @@ button{border:0;background:#405bd5;color:white;cursor:pointer}
 .progress{height:8px;background:#e4e9f5;border-radius:10px;overflow:hidden}
 .progress div{height:100%;background:#405bd5}
 footer{text-align:center;color:#64748b;padding:15px}
+.lv-A1{--lc:#2e9e5b}.lv-A2{--lc:#5f9e1f}.lv-B1{--lc:#b8860b}.lv-B2{--lc:#e0731a}.lv-C1{--lc:#d64545}.lv-C2{--lc:#7b3fa0}
+.lvbadge{display:inline-block;background:var(--lc,#405bd5);color:#fff;padding:4px 14px;border-radius:20px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -41,8 +43,8 @@ footer{text-align:center;color:#64748b;padding:15px}
 <section id="welcome">
 <h2 id="welcomeTitle">👋 Welcome | أهلاً بك</h2>
 <div id="nameBox">
-<p>Write your name so the app can save your level and progress on this device.<br>اكتب اسمك عشان يتحفظ مستواك وتقدمك على جهازك.</p>
-<input id="nameInput" type="text" maxlength="20" placeholder="Your name / اسمك" style="width:100%;padding:12px;font-size:16px;border-radius:10px;border:1px solid #cbd5e1;margin:6px 0">
+<p>What's your name? 👋<br>ما اسمك؟</p>
+<input id="nameInput" type="text" maxlength="20" placeholder="Type your name" style="width:100%;padding:12px;font-size:16px;border-radius:10px;border:1px solid #cbd5e1;margin:6px 0">
 <button type="button" onclick="saveName()">Start / ابدأ</button>
 </div>
 <div id="userBox" class="hidden">
@@ -239,6 +241,7 @@ q:[
 ];
 
 function pfx(){try{return "eb_"+encodeURIComponent((localStorage.getItem("eb_current")||"guest").toLowerCase())+"_";}catch(e){return "eb_guest_";}}
+function colorSelect(id,l){const e=document.getElementById(id);if(!e)return;e.className="lv-"+l;e.style.border="3px solid var(--lc)";}
 function saved(k,d=""){try{return localStorage.getItem(pfx()+k)??d}catch(e){return d}}
 function store(k,v){try{localStorage.setItem(pfx()+k,v)}catch(e){}}
 
@@ -246,13 +249,14 @@ let currentStory=null, storyAnswers={},storyScore={},wordIndex=0;
 
 function renderStories(){
 const level=document.getElementById("level").value;
+colorSelect("level",level);
 const list=document.getElementById("storyList");
 list.innerHTML="";
 const filtered=stories.filter(s=>s.level===level);
 if(!filtered.length){list.textContent="No stories available yet.";return;}
 filtered.forEach(s=>{
 const b=document.createElement("button");
-b.className="secondary";
+b.className="secondary lv-"+s.level;b.style.borderLeft="8px solid var(--lc)";
 b.textContent=(saved("done_"+s.id)==="yes"?"✓ ":"📖 ")+s.title;
 b.onclick=()=>openStory(s.id);
 list.appendChild(b);
@@ -265,7 +269,7 @@ const s=currentStory;
 const reader=document.getElementById("reader");
 reader.classList.remove("hidden");
 document.getElementById("storyContent").innerHTML=
-'<span class="pill">'+s.level+'</span><h2>'+s.title+'</h2>'+
+'<span class="lvbadge lv-'+s.level+'">'+s.level+'</span><h2>'+s.title+'</h2>'+
 '<h3>📖 Read in English</h3><p id="storyEnglish" class="story"></p>'+
 '<button id="translationButton" class="secondary" onclick="toggleTranslation()">Show Arabic Translation / إظهار الترجمة</button>'+
 '<p id="storyArabic" class="translation hidden"></p>'+
@@ -367,6 +371,8 @@ updateShadowSentence();
 }
 function updateShadowSentence(){
 const level=document.getElementById("shadowLevel").value;
+colorSelect("shadowLevel",level);
+const st=document.getElementById("shadowText");st.className="story lv-"+level;st.style.borderLeft="6px solid var(--lc)";st.style.paddingLeft="10px";
 const list=shadowingSentences[level];
 const item=list[shadowIndex];
 document.getElementById("shadowText").textContent=item.en;
@@ -544,7 +550,7 @@ function renderTestQuestion(){
 const q=questions[testOrder[testPos]],area=document.getElementById("testArea");
 const isL=!!q.audio;
 const last=testPos===testOrder.length-1;
-area.innerHTML='<p>Question '+(testPos+1)+' • Level '+q.l+'</p><div class="progress"><div style="width:'+(testPos/testOrder.length*100)+'%"></div></div>'+
+area.innerHTML='<p>Question '+(testPos+1)+' • <span class="lvbadge lv-'+q.l+'">Level '+q.l+'</span></p><div class="progress"><div style="width:'+(testPos/testOrder.length*100)+'%"></div></div>'+
 '<h3>'+(isL?"🎧 Listening":"📝 Grammar")+'</h3>'+
 (isL?'<button id="testPlay" type="button">🔊 Play audio</button><p class="small">Play it as many times as you like. Needs internet and sound on.</p>':"")+
 '<p><b id="testQText"></b></p><div id="testOptions"></div><p id="testFeedback"></p>'+
@@ -608,7 +614,7 @@ const extra="Grammar "+g[0]+"/"+g[1]+" • Listening "+li[0]+"/"+li[1];
 store("test_score",total+"/"+asked);
 store("test_level",placed);
 store("test_detail",detail.join(" • ")+" | "+extra);
-document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+total+' / '+asked+'</p><p>Estimated level: <b>'+placed+'</b></p><p class="small">'+detail.join(" • ")+'</p><p class="small">'+extra+'</p><p class="small">You pass a level with 3 correct answers out of 5. If you skipped listening questions, your real level may be higher.</p><button type="button" onclick="useLevel(\''+placed+'\')">📚 Start stories at my level ('+placed+')</button>';
+document.getElementById("testArea").innerHTML='<h3>🎉 Test completed!</h3><p>Your score: '+total+' / '+asked+'</p><p>Estimated level: <span class="lvbadge lv-'+placed+'">'+placed+'</span></p><p class="small">'+detail.join(" • ")+'</p><p class="small">'+extra+'</p><p class="small">You pass a level with 3 correct answers out of 5. If you skipped listening questions, your real level may be higher.</p><button type="button" onclick="useLevel(\''+placed+'\')">📚 Start stories at my level ('+placed+')</button>';
 showProgress();
 }
 
@@ -1508,7 +1514,7 @@ if(!nb||!ub)return;
 if(u){
 nb.classList.add("hidden");ub.classList.remove("hidden");
 const l=saved("test_level","");
-document.getElementById("userInfo").textContent="Welcome back, "+u+"! "+(l?"Your saved level: "+l+" ✅":"Take the level test below to find your level.");
+document.getElementById("userInfo").textContent="Hi "+u+"! 👋 "+(l?"Your level: "+l+" ✅":"Take the level test below to find your level.");
 }else{
 nb.classList.remove("hidden");ub.classList.add("hidden");
 }
