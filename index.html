@@ -38,6 +38,26 @@ footer{text-align:center;color:#64748b;padding:15px}
 <span class="pill">📴 Offline Content • 🔊 Online Audio</span>
 </header>
 
+<section id="welcome">
+<h2 id="welcomeTitle">👋 Welcome | أهلاً بك</h2>
+<div id="nameBox">
+<p>Write your name so the app can save your level and progress on this device.<br>اكتب اسمك عشان يتحفظ مستواك وتقدمك على جهازك.</p>
+<input id="nameInput" type="text" maxlength="20" placeholder="Your name / اسمك" style="width:100%;padding:12px;font-size:16px;border-radius:10px;border:1px solid #cbd5e1;margin:6px 0">
+<button type="button" onclick="saveName()">Start / ابدأ</button>
+</div>
+<div id="userBox" class="hidden">
+<p id="userInfo"></p>
+<button type="button" class="secondary" onclick="switchUser()">Not you? Change name / تغيير الاسم</button>
+</div>
+</section>
+
+<section>
+<h2>🎯 English Level Test</h2>
+<p>Answer grammar and listening questions to find your level from A1 to C2. Turn your sound on. The test stops when a level becomes too hard.</p>
+<button onclick="startTest()">Start Level Test</button>
+<div id="testArea"></div>
+</section>
+
 <section>
 <h2>📚 Short Stories | القصص القصيرة</h2>
 <p>Choose your level, read the story, and reveal the Arabic translation whenever you need it.</p>
@@ -73,7 +93,9 @@ footer{text-align:center;color:#64748b;padding:15px}
 <p id="shadowCounter" class="small"></p>
 <button type="button" onclick="speak(document.getElementById('shadowText').textContent.trim())">🔊 Listen and Repeat</button>
 <button type="button" class="secondary" onclick="nextShadowSentence()">➡️ Next Sentence</button>
-<button type="button" id="recBtn" class="secondary" onclick="recordVoice()">🎙️ Record My Voice</button>
+<button type="button" id="speakBtn" onclick="checkSpeaking()">🎙️ Check My Speaking</button>
+<div id="speakResult" class="small"></div>
+<button type="button" id="recBtn" class="secondary" onclick="recordVoice()">🎧 Record &amp; Listen to Myself</button>
 <audio id="recordedAudio" controls class="hidden" style="width:100%"></audio>
 <p id="recordStatus" class="small"></p>
 </section>
@@ -82,13 +104,6 @@ footer{text-align:center;color:#64748b;padding:15px}
 <h2>📝 Daily Vocabulary</h2>
 <div id="dailyWord"></div>
 <button class="secondary" onclick="nextWord()">Next Word / الكلمة التالية</button>
-</section>
-
-<section>
-<h2>🎯 English Level Test</h2>
-<p>Answer grammar and listening questions to find your level from A1 to C2. Turn your sound on. The test stops when a level becomes too hard.</p>
-<button onclick="startTest()">Start Level Test</button>
-<div id="testArea"></div>
 </section>
 
 <section>
@@ -223,8 +238,9 @@ q:[
 ]}
 ];
 
-function saved(k,d=""){try{return localStorage.getItem(k)??d}catch(e){return d}}
-function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function pfx(){try{return "eb_"+encodeURIComponent((localStorage.getItem("eb_current")||"guest").toLowerCase())+"_";}catch(e){return "eb_guest_";}}
+function saved(k,d=""){try{return localStorage.getItem(pfx()+k)??d}catch(e){return d}}
+function store(k,v){try{localStorage.setItem(pfx()+k,v)}catch(e){}}
 
 let currentStory=null, storyAnswers={},storyScore={},wordIndex=0;
 
@@ -356,6 +372,7 @@ const item=list[shadowIndex];
 document.getElementById("shadowText").textContent=item.en;
 document.getElementById("shadowTranslation").textContent=item.ar;
 document.getElementById("shadowCounter").textContent=(shadowIndex+1)+" / "+list.length;
+const sr=document.getElementById("speakResult");if(sr)sr.textContent="";
 }
 
 let mediaRecorder=null,audioChunks=[];
@@ -392,7 +409,7 @@ const blob=new Blob(audioChunks,{type:mediaRecorder.mimeType||"audio/webm"});
 audio.src=URL.createObjectURL(blob);
 audio.classList.remove("hidden");
 stream.getTracks().forEach(t=>t.stop());
-btn.textContent="🎙️ Record My Voice";
+btn.textContent="🎧 Record & Listen to Myself";
 recMsg("✅ Recording saved. Press play to listen to yourself.");
 };
 mediaRecorder.start();
@@ -600,6 +617,7 @@ const area=document.getElementById("progressArea");
 const tScore=saved("test_score","Not taken");
 const tLevel=saved("test_level","Not assessed");
 const detail=saved("test_detail","");
+if(typeof renderWelcome==="function")renderWelcome();
 area.innerHTML='<div class="card"><p><b>Level Test Score:</b> '+tScore+'</p><p><b>Estimated Level:</b> '+tLevel+'</p>'+(detail?'<p class="small">'+detail+'</p>':"")+'</div>';
 }
 
@@ -1434,6 +1452,151 @@ map[title]=parts.map(x=>x.split("|").map(y=>y.trim())).filter(x=>x.length===3);
 stories.forEach(s=>{if((!s.words||!s.words.length)&&map[s.title])s.words=map[s.title];});
 })();
 
+/* Harder words first (B1 - C1) */
+(function(){
+const X=`The Lost Wallet#honesty|الأمانة|Honesty is important at work.#temptation|إغراء|He resisted the temptation.
+The Job Offer#negotiate|يتفاوض|She negotiated a higher salary.#priority|أولوية|Family is my priority.
+The Old Photograph#heritage|إرث / تراث|We are proud of our heritage.#nostalgic|حنين للماضي|Old songs make me nostalgic.
+The Marathon#endurance|التحمّل|Running builds endurance.#determination|عزيمة|Her determination impressed everyone.
+The Street Musician#passer-by|عابر سبيل|A passer-by dropped some coins.#generosity|كرم|Thank you for your generosity.
+A Surprise Inspection#standards|معايير|The hotel has high standards.#thorough|دقيق / شامل|They did a thorough check.
+Learning from Failure#setback|انتكاسة|It was only a small setback.#persevere|يثابر|Persevere and you will succeed.
+The Garden Project#community|مجتمع / حي|Our community is friendly.#cooperate|يتعاون|Neighbours cooperate on projects.
+The Wrong Train#misunderstanding|سوء فهم|It was just a misunderstanding.#inconvenience|إزعاج / مضايقة|Sorry for the inconvenience.
+The Quiet Neighbour#misjudge|يسيء الحكم على|Don't misjudge people.#acquaintance|شخص تعرفه / معرفة|He is just an acquaintance.
+The Remote Village#infrastructure|بنية تحتية|The region needs better infrastructure.#sustainable|مستدام|We need a sustainable solution.
+The Honest Review#constructive|بنّاء|Constructive criticism helps.#reputation|سمعة|Protect your reputation.
+The Last Day of Summer#spontaneous|عفوي|It was a spontaneous trip.#fleeting|عابر / سريع الزوال|A fleeting moment of joy.
+The Translator#nuance|فارق دقيق|Translate every nuance.#meticulous|دقيق جداً|She is meticulous about details.
+The Debate Team#articulate|يعبّر بوضوح|Articulate your ideas clearly.#resilience|صلابة / قدرة على التعافي|Failure builds resilience.
+The Power Cut#solidarity|تضامن|They showed solidarity.#resourceful|واسع الحيلة|He is a resourceful neighbour.
+The Midnight Call#sacrifice|تضحية|It was a small sacrifice.#reconcile|يتصالح|They reconciled after years.
+The Chess Club#strategic|استراتيجي|It was a strategic move.#perseverance|مثابرة|Success needs perseverance.
+The Weight of Words#inadvertently|دون قصد|He inadvertently hurt her.#resonate|يتردد صداه|His words resonated with me.
+The Archive#poignant|مؤثر|It is a poignant story.#testimony|شهادة|Their testimony is valuable.
+A Question of Trust#integrity|نزاهة|He acted with integrity.#accountable|مُساءَل / مسؤول|Leaders must be accountable.
+The Silent Observer#perceptive|ثاقب الملاحظة|She made a perceptive remark.#undervalue|يقلّل من قيمة|Do not undervalue quiet people.
+The Cartographer#tangible|ملموس|We need tangible results.#resilient|صامد / مرِن|A resilient community.
+The Unspoken Rule#etiquette|آداب السلوك|Learn the business etiquette.#implicit|ضمني|It was an implicit agreement.
+The Weight of Memory#nostalgia|حنين إلى الماضي|He felt a wave of nostalgia.#transient|زائل / عابر|Fame is transient.
+The Overlooked Solution#pragmatic|عملي|She took a pragmatic approach.#ingenious|مبتكر / بارع|It was an ingenious idea.
+The Borrowed Opinion#bias|تحيّز|Media bias is a real issue.#critically|بنظرة ناقدة|Learn to think critically.`;
+X.split("\n").forEach(line=>{
+const parts=line.split("#");const t=parts.shift().trim();
+const extra=parts.map(x=>x.split("|").map(y=>y.trim())).filter(x=>x.length===3);
+stories.forEach(s=>{if(s.title===t)s.words=extra.concat(s.words||[]);});
+});
+})();
+
+/* Profiles: name + saved level per person on this device */
+function currentUser(){try{return localStorage.getItem("eb_current")||"";}catch(e){return "";}}
+function migrateGuest(name){
+try{
+const gp="eb_guest_",np="eb_"+encodeURIComponent(name.toLowerCase())+"_";
+if(localStorage.getItem(np+"test_level"))return;
+Object.keys(localStorage).filter(k=>k.indexOf(gp)===0).forEach(k=>{localStorage.setItem(np+k.slice(gp.length),localStorage.getItem(k));localStorage.removeItem(k);});
+}catch(e){}
+}
+function applyLevel(){
+const l=saved("test_level","");
+if(l){document.getElementById("level").value=l;document.getElementById("shadowLevel").value=l;}
+}
+function renderWelcome(){
+const u=currentUser();
+const nb=document.getElementById("nameBox"),ub=document.getElementById("userBox");
+if(!nb||!ub)return;
+if(u){
+nb.classList.add("hidden");ub.classList.remove("hidden");
+const l=saved("test_level","");
+document.getElementById("userInfo").textContent="Welcome back, "+u+"! "+(l?"Your saved level: "+l+" ✅":"Take the level test below to find your level.");
+}else{
+nb.classList.remove("hidden");ub.classList.add("hidden");
+}
+}
+function afterProfileChange(){
+renderWelcome();applyLevel();renderStories();changeShadowLevel();showProgress();
+document.getElementById("testArea").innerHTML="";
+}
+function saveName(){
+const v=document.getElementById("nameInput").value.trim().slice(0,20);
+if(!v){toast("Please write your name / اكتب اسمك");return;}
+migrateGuest(v);
+try{localStorage.setItem("eb_current",v);}catch(e){}
+afterProfileChange();
+}
+function switchUser(){
+try{localStorage.removeItem("eb_current");}catch(e){}
+document.getElementById("nameInput").value="";
+afterProfileChange();
+}
+
+/* Speaking check: speech recognition compares what you said with the sentence */
+const SpeechRec=window.SpeechRecognition||window.webkitSpeechRecognition;
+let sRec=null,sListening=false;
+function normWords(t){return String(t).toLowerCase().replace(/[’]/g,"'").replace(/[^a-z0-9' ]+/g," ").split(/\s+/).filter(Boolean);}
+function compareSpeech(target,heard){
+const tokens=target.split(/\s+/).filter(Boolean);
+const T=[],map=[];
+tokens.forEach((tk,ti)=>normWords(tk).forEach(w=>{T.push(w);map.push(ti);}));
+const H=normWords(heard);
+const dp=[];
+for(let i=0;i<=T.length;i++){dp.push(new Array(H.length+1).fill(0));}
+for(let i=1;i<=T.length;i++)for(let j=1;j<=H.length;j++)dp[i][j]=T[i-1]===H[j-1]?dp[i-1][j-1]+1:Math.max(dp[i-1][j],dp[i][j-1]);
+const ok=new Array(T.length).fill(false);
+let i=T.length,j=H.length;
+while(i>0&&j>0){
+if(T[i-1]===H[j-1]){ok[i-1]=true;i--;j--;}
+else if(dp[i-1][j]>=dp[i][j-1])i--;else j--;
+}
+const tokOk=tokens.map((_,ti)=>{const idx=[];map.forEach((m,k)=>{if(m===ti)idx.push(k);});return idx.every(k=>ok[k]);});
+const hits=ok.filter(Boolean).length;
+return {tokens:tokens,tokOk:tokOk,pct:T.length?Math.round(hits/T.length*100):0};
+}
+function showSpeakResult(heard,c){
+const out=document.getElementById("speakResult");
+out.innerHTML="";
+const words=document.createElement("p");words.className="story";
+c.tokens.forEach((tk,i)=>{
+const s=document.createElement("span");s.textContent=tk+" ";
+s.style.color=c.tokOk[i]?"#219653":"#d64545";s.style.fontWeight="bold";
+words.appendChild(s);
+});
+const said=document.createElement("p");said.textContent="I heard: “"+heard+"”";
+const score=document.createElement("p");
+let msg="🔁 Not quite. Listen again, then repeat slowly.";
+if(c.pct>=85)msg="✅ Excellent! Your pronunciation is clear.";
+else if(c.pct>=60)msg="👍 Good. Try again and focus on the red words.";
+score.textContent="Score: "+c.pct+"% — "+msg;
+out.append(words,said,score);
+}
+function checkSpeaking(){
+const btn=document.getElementById("speakBtn"),out=document.getElementById("speakResult");
+if(!SpeechRec){out.textContent="Speech check needs Google Chrome. Please open the page in Chrome.";return;}
+if(sListening&&sRec){sRec.stop();return;}
+try{ttsEl.pause();}catch(e){}
+const target=document.getElementById("shadowText").textContent.trim();
+sRec=new SpeechRec();
+sRec.lang="en-US";sRec.interimResults=false;sRec.maxAlternatives=3;
+sListening=true;
+btn.textContent="⏹️ Stop";
+out.textContent="🎙️ Listening... say the sentence now.";
+sRec.onresult=e=>{
+let best=null,heard="";
+const r=e.results[0];
+for(let k=0;k<r.length;k++){
+const c=compareSpeech(target,r[k].transcript);
+if(!best||c.pct>best.pct){best=c;heard=r[k].transcript;}
+}
+if(best)showSpeakResult(heard,best);
+};
+sRec.onerror=e=>{
+const er=e.error;
+out.textContent=(er==="not-allowed"||er==="service-not-allowed")?"Microphone is blocked. Tap the lock icon in Chrome and allow the microphone.":(er==="no-speech")?"I did not hear anything. Try again closer to the microphone.":"Could not check ("+er+"). Make sure you are online and try again.";
+};
+sRec.onend=()=>{sListening=false;btn.textContent="🎙️ Check My Speaking";};
+try{sRec.start();}catch(err){sListening=false;btn.textContent="🎙️ Check My Speaking";out.textContent="Could not start the microphone.";}
+}
+
 let _vocabPool=null;
 function getVocabPool(){
 if(_vocabPool)return _vocabPool;
@@ -1450,6 +1613,7 @@ return list;
 wordIndex=Math.floor(Date.now()/86400000)%getVocabPool().length;
 
 window.onload=function(){
+applyLevel();
 renderStories();
 renderWord();
 showProgress();
