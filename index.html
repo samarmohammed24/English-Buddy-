@@ -30,9 +30,13 @@ button{border:0;background:#405bd5;color:white;cursor:pointer}
 footer{text-align:center;color:#64748b;padding:15px}
 .lv-A1{--lc:#2e9e5b}.lv-A2{--lc:#5f9e1f}.lv-B1{--lc:#b8860b}.lv-B2{--lc:#e0731a}.lv-C1{--lc:#d64545}.lv-C2{--lc:#7b3fa0}
 .lvbadge{display:inline-block;background:var(--lc,#405bd5);color:#fff;padding:4px 14px;border-radius:20px;font-weight:bold}
+#nameScreen{display:none;max-width:480px;margin:60px auto}
+body.needname #nameScreen{display:block}
+body.needname>*:not(#nameScreen):not(#toast){display:none!important}
+#nameScreen h1{text-align:center;color:#263c70;font-size:34px}
 </style>
 </head>
-<body>
+<body class="needname">
 
 <header>
 <h1>🌟 English Buddy</h1>
@@ -40,17 +44,16 @@ footer{text-align:center;color:#64748b;padding:15px}
 <span class="pill">📴 Offline Content • 🔊 Online Audio</span>
 </header>
 
-<section id="welcome">
-<h2 id="welcomeTitle">👋 Welcome | أهلاً بك</h2>
-<div id="nameBox">
-<p>What's your name? 👋<br>ما اسمك؟</p>
-<input id="nameInput" type="text" maxlength="20" placeholder="Type your name" style="width:100%;padding:12px;font-size:16px;border-radius:10px;border:1px solid #cbd5e1;margin:6px 0">
+<section id="nameScreen">
+<h1>🌟 English Buddy</h1>
+<h2 style="text-align:center">👋 What's your name? | ما اسمك؟</h2>
+<input id="nameInput" type="text" maxlength="20" placeholder="Type your name" onkeydown="if(event.key==='Enter')saveName()" style="width:100%;padding:14px;font-size:18px;border-radius:12px;border:1px solid #cbd5e1;margin:8px 0">
 <button type="button" onclick="saveName()">Start / ابدأ</button>
-</div>
-<div id="userBox" class="hidden">
-<p id="userInfo"></p>
-<button type="button" class="secondary" onclick="switchUser()">Not you? Change name / تغيير الاسم</button>
-</div>
+</section>
+
+<section id="userBox">
+<p id="userInfo" style="margin:0 0 6px"></p>
+<button type="button" class="secondary" onclick="switchUser()">Change name / تغيير الاسم</button>
 </section>
 
 <section>
@@ -95,17 +98,27 @@ footer{text-align:center;color:#64748b;padding:15px}
 <p id="shadowCounter" class="small"></p>
 <button type="button" onclick="speak(document.getElementById('shadowText').textContent.trim())">🔊 Listen and Repeat</button>
 <button type="button" class="secondary" onclick="nextShadowSentence()">➡️ Next Sentence</button>
-<button type="button" id="speakBtn" onclick="checkSpeaking()">🎙️ Check My Speaking</button>
+<button type="button" id="speakBtn" onclick="checkSpeaking()">🎙️ Record &amp; Check My Speaking</button>
+<label class="small"><input type="checkbox" id="scoreOnly"> Score only (turn this on if the app cannot hear you)</label>
 <div id="speakResult" class="small"></div>
-<button type="button" id="recBtn" class="secondary" onclick="recordVoice()">🎧 Record &amp; Listen to Myself</button>
 <audio id="recordedAudio" controls class="hidden" style="width:100%"></audio>
 <p id="recordStatus" class="small"></p>
 </section>
 
 <section>
-<h2>📝 Daily Vocabulary</h2>
+<h2>📝 Daily Vocabulary | الكلمات اليومية</h2>
+<p class="small">The 100 most important words for each level.</p>
+<select id="vocabLevel" onchange="changeVocabLevel()">
+<option value="A1">A1 - Beginner</option>
+<option value="A2">A2 - Elementary</option>
+<option value="B1">B1 - Intermediate</option>
+<option value="B2">B2 - Upper Intermediate</option>
+<option value="C1">C1 - Advanced</option>
+<option value="C2">C2 - Proficient</option>
+</select>
 <div id="dailyWord"></div>
 <button class="secondary" onclick="nextWord()">Next Word / الكلمة التالية</button>
+<button class="secondary" onclick="prevWord()">Previous Word / الكلمة السابقة</button>
 </section>
 
 <section>
@@ -379,6 +392,7 @@ document.getElementById("shadowText").textContent=item.en;
 document.getElementById("shadowTranslation").textContent=item.ar;
 document.getElementById("shadowCounter").textContent=(shadowIndex+1)+" / "+list.length;
 const sr=document.getElementById("speakResult");if(sr)sr.textContent="";
+const ra=document.getElementById("recordedAudio");if(ra){ra.pause();ra.classList.add("hidden");}
 }
 
 let mediaRecorder=null,audioChunks=[];
@@ -439,18 +453,28 @@ const words=[
 ["Achieve","يحقق","You can achieve your goals."]
 ];
 
-function renderWord(){
-const pool=getVocabPool();const w=pool[wordIndex%pool.length];
-document.getElementById("dailyWord").innerHTML="";
-const d=document.createElement("div");d.className="word";
-const h=document.createElement("h3");h.textContent=w[0];
-const m=document.createElement("p");m.textContent=w[1];
-const e=document.createElement("p");e.textContent="Example: "+w[2];
-const b=document.createElement("button");b.textContent="🔊 Hear Word";b.onclick=()=>speak(w[0]);
-const c=document.createElement("p");c.className="small";c.textContent=((wordIndex%pool.length)+1)+" / "+pool.length;
-d.append(h,m,e,b,c);document.getElementById("dailyWord").appendChild(d);
+let vocabLevel="A1";
+function vocabList(){return (typeof VOCAB!=="undefined"&&VOCAB[vocabLevel])||[];}
+function changeVocabLevel(){
+vocabLevel=document.getElementById("vocabLevel").value;
+wordIndex=Math.floor(Date.now()/86400000)%100;
+renderWord();
 }
-function nextWord(){wordIndex=(wordIndex+1)%getVocabPool().length;renderWord()}
+function renderWord(){
+const list=vocabList();if(!list.length)return;
+colorSelect("vocabLevel",vocabLevel);
+const i=((wordIndex%list.length)+list.length)%list.length;
+const w=list[i];
+const box=document.getElementById("dailyWord");box.innerHTML="";
+const d=document.createElement("div");d.className="word lv-"+vocabLevel;d.style.borderLeft="8px solid var(--lc)";
+const h3=document.createElement("h3");h3.textContent=w[0];
+const m=document.createElement("p");m.textContent=w[1];m.style.fontSize="20px";
+const b=document.createElement("button");b.textContent="🔊 Hear Word";b.onclick=()=>speak(w[0]);
+const c=document.createElement("p");c.className="small";c.textContent="Level "+vocabLevel+" • "+(i+1)+" / "+list.length;
+d.append(h3,m,b,c);box.appendChild(d);
+}
+function nextWord(){wordIndex=(wordIndex+1)%Math.max(1,vocabList().length);renderWord();}
+function prevWord(){const n=Math.max(1,vocabList().length);wordIndex=(wordIndex-1+n)%n;renderWord();}
 
 /* Audio (online first, device voice as fallback) */
 const ttsEl=new Audio();
@@ -1535,23 +1559,19 @@ Object.keys(localStorage).filter(k=>k.indexOf(gp)===0).forEach(k=>{localStorage.
 }
 function applyLevel(){
 const l=saved("test_level","");
-if(l){document.getElementById("level").value=l;document.getElementById("shadowLevel").value=l;}
+if(l){document.getElementById("level").value=l;document.getElementById("shadowLevel").value=l;const vs=document.getElementById("vocabLevel");if(vs){vs.value=l;vocabLevel=l;}}
 }
 function renderWelcome(){
 const u=currentUser();
-const nb=document.getElementById("nameBox"),ub=document.getElementById("userBox");
-if(!nb||!ub)return;
-if(u){
-nb.classList.add("hidden");ub.classList.remove("hidden");
+document.body.classList.toggle("needname",!u);
+if(!u)return;
 const l=saved("test_level","");
 document.getElementById("userInfo").textContent="Hi "+u+"! 👋 "+(l?"Your level: "+l+" ✅":"Take the level test below to find your level.");
-}else{
-nb.classList.remove("hidden");ub.classList.add("hidden");
-}
 }
 function afterProfileChange(){
 renderWelcome();applyLevel();renderStories();changeShadowLevel();showProgress();
 document.getElementById("testArea").innerHTML="";
+window.scrollTo(0,0);
 }
 function saveName(){
 const v=document.getElementById("nameInput").value.trim().slice(0,20);
@@ -1605,48 +1625,83 @@ else if(c.pct>=60)msg="👍 Good. Try again and focus on the red words.";
 score.textContent="Score: "+c.pct+"% — "+msg;
 out.append(words,said,score);
 }
+function srMessage(er){
+if(er==="not-allowed"||er==="service-not-allowed")return "Microphone is blocked. Tap the lock icon in Chrome and allow the microphone.";
+if(er==="no-speech")return "I did not hear anything. Try again closer to the microphone.";
+if(er==="audio-capture")return "Your phone cannot score and record at the same time. Your recording is saved below. Turn on 'Score only' to get a score.";
+return "Could not check ("+er+"). Make sure you are online and try again.";
+}
+let spState=null;
+function speakFinalize(){
+const s=spState;
+if(!s||!s.recDone||!s.srDone)return;
+spState=null;
+const out=document.getElementById("speakResult"),btn=document.getElementById("speakBtn"),audio=document.getElementById("recordedAudio");
+btn.textContent="🎙️ Record & Check My Speaking";
+if(s.result){showSpeakResult(s.heard,s.result);}
+else{out.innerHTML="";const p=document.createElement("p");p.textContent=s.error||"I could not understand your voice. Try again.";out.appendChild(p);}
+if(s.blobUrl){
+audio.src=s.blobUrl;audio.classList.remove("hidden");
+const q=document.createElement("p");q.textContent="🎧 Press play below to hear yourself again, as many times as you like.";out.appendChild(q);
+}
+}
 function checkSpeaking(){
 const btn=document.getElementById("speakBtn"),out=document.getElementById("speakResult");
-if(!SpeechRec){out.textContent="Speech check needs Google Chrome. Please open the page in Chrome.";return;}
-if(sListening&&sRec){sRec.stop();return;}
+if(spState){
+try{if(spState.sr)spState.sr.stop();}catch(e){}
+try{if(spState.rec&&spState.rec.state==="recording")spState.rec.stop();}catch(e){}
+return;
+}
 try{ttsEl.pause();}catch(e){}
 const target=document.getElementById("shadowText").textContent.trim();
-sRec=new SpeechRec();
-sRec.lang="en-US";sRec.interimResults=false;sRec.maxAlternatives=3;
-sListening=true;
+const s=spState={heard:"",result:null,error:"",blobUrl:"",recDone:false,srDone:false,rec:null,sr:null,chunks:[]};
 btn.textContent="⏹️ Stop";
 out.textContent="🎙️ Listening... say the sentence now.";
-sRec.onresult=e=>{
+const stopRec=()=>{
+if(s.rec&&s.rec.state==="recording"){try{s.rec.stop();}catch(e){}}
+else if(!s.rec&&!s.recDone){s.recDone=true;}
+};
+const startSR=()=>{
+if(!SpeechRec){s.srDone=true;s.error="The score needs Google Chrome. Your recording is saved below.";stopRec();speakFinalize();return;}
+const sr=new SpeechRec();s.sr=sr;
+sr.lang="en-US";sr.interimResults=false;sr.maxAlternatives=3;
+sr.onresult=e=>{
 let best=null,heard="";
 const r=e.results[0];
 for(let k=0;k<r.length;k++){
 const c=compareSpeech(target,r[k].transcript);
 if(!best||c.pct>best.pct){best=c;heard=r[k].transcript;}
 }
-if(best)showSpeakResult(heard,best);
+if(best){s.result=best;s.heard=heard;}
 };
-sRec.onerror=e=>{
-const er=e.error;
-out.textContent=(er==="not-allowed"||er==="service-not-allowed")?"Microphone is blocked. Tap the lock icon in Chrome and allow the microphone.":(er==="no-speech")?"I did not hear anything. Try again closer to the microphone.":"Could not check ("+er+"). Make sure you are online and try again.";
+sr.onerror=e=>{s.error=srMessage(e.error);};
+sr.onend=()=>{s.srDone=true;stopRec();speakFinalize();};
+try{sr.start();}catch(err){s.srDone=true;s.error="Could not start the speech check.";stopRec();speakFinalize();}
 };
-sRec.onend=()=>{sListening=false;btn.textContent="🎙️ Check My Speaking";};
-try{sRec.start();}catch(err){sListening=false;btn.textContent="🎙️ Check My Speaking";out.textContent="Could not start the microphone.";}
+const begin=(stream)=>{
+if(stream){
+let opts={};
+["audio/webm;codecs=opus","audio/webm","audio/mp4","audio/ogg"].some(t=>{if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t)){opts={mimeType:t};return true;}return false;});
+const rec=new MediaRecorder(stream,opts);s.rec=rec;
+rec.ondataavailable=e=>{if(e.data&&e.data.size)s.chunks.push(e.data);};
+rec.onstop=()=>{
+stream.getTracks().forEach(t=>t.stop());
+if(s.chunks.length)s.blobUrl=URL.createObjectURL(new Blob(s.chunks,{type:rec.mimeType||"audio/webm"}));
+s.recDone=true;speakFinalize();
+};
+rec.start();
+}else{s.recDone=true;}
+startSR();
+};
+const scoreOnly=document.getElementById("scoreOnly").checked;
+if(!scoreOnly&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&typeof MediaRecorder!=="undefined"){
+navigator.mediaDevices.getUserMedia({audio:true}).then(st=>begin(st),()=>begin(null));
+}else{begin(null);}
 }
 
-let _vocabPool=null;
-function getVocabPool(){
-if(_vocabPool)return _vocabPool;
-const seen={},list=[];
-function add(w){if(!w||w.length<3)return;const k=w[0].toLowerCase();if(seen[k])return;seen[k]=1;list.push(w);}
-words.forEach(add);
-stories.forEach(s=>(s.words||[]).forEach(add));
-let seed=20240601;
-function rnd(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}
-for(let i=list.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));const x=list[i];list[i]=list[j];list[j]=x;}
-_vocabPool=list;
-return list;
-}
-wordIndex=Math.floor(Date.now()/86400000)%getVocabPool().length;
+const VOCAB={"A1":[["hello","مرحباً"],["goodbye","مع السلامة"],["please","من فضلك"],["thanks","شكراً"],["yes","نعم"],["no","لا"],["name","اسم"],["family","عائلة"],["mother","أم"],["father","أب"],["brother","أخ"],["sister","أخت"],["friend","صديق"],["boy","ولد"],["girl","بنت"],["man","رجل"],["woman","امرأة"],["child","طفل"],["house","بيت"],["room","غرفة"],["door","باب"],["window","نافذة"],["table","طاولة"],["chair","كرسي"],["bed","سرير"],["school","مدرسة"],["teacher","معلم"],["student","طالب"],["book","كتاب"],["pen","قلم"],["bag","حقيبة"],["water","ماء"],["food","طعام"],["bread","خبز"],["rice","أرز"],["milk","حليب"],["tea","شاي"],["coffee","قهوة"],["fruit","فاكهة"],["apple","تفاحة"],["egg","بيضة"],["meat","لحم"],["fish","سمك"],["breakfast","فطور"],["lunch","غداء"],["dinner","عشاء"],["eat","يأكل"],["drink","يشرب"],["sleep","ينام"],["walk","يمشي"],["run","يركض"],["go","يذهب"],["come","يأتي"],["see","يرى"],["look","ينظر"],["listen","يستمع"],["speak","يتحدث"],["read","يقرأ"],["write","يكتب"],["play","يلعب"],["work","يعمل"],["like","يُعجبه"],["love","يحب"],["want","يريد"],["have","يملك"],["make","يصنع"],["buy","يشتري"],["open","يفتح"],["close","يغلق"],["big","كبير"],["small","صغير"],["good","جيد"],["bad","سيئ"],["new","جديد"],["old","قديم"],["hot","حار"],["cold","بارد"],["happy","سعيد"],["sad","حزين"],["tired","متعب"],["hungry","جائع"],["today","اليوم"],["tomorrow","غداً"],["morning","صباح"],["night","ليل"],["day","يوم"],["week","أسبوع"],["year","سنة"],["time","وقت"],["red","أحمر"],["blue","أزرق"],["green","أخضر"],["white","أبيض"],["black","أسود"],["sun","شمس"],["car","سيارة"],["dog","كلب"],["cat","قطة"],["hand","يد"],["eye","عين"]],"A2":[["airport","مطار"],["ticket","تذكرة"],["journey","رحلة"],["hotel","فندق"],["holiday","عطلة"],["weather","طقس"],["rain","مطر"],["winter","شتاء"],["summer","صيف"],["city","مدينة"],["village","قرية"],["street","شارع"],["market","سوق"],["shop","محل"],["price","سعر"],["money","مال"],["cheap","رخيص"],["expensive","غالٍ"],["borrow","يستعير"],["lend","يُقرض"],["pay","يدفع"],["cost","يكلّف"],["sell","يبيع"],["wear","يرتدي"],["clothes","ملابس"],["shirt","قميص"],["shoes","حذاء"],["dress","فستان"],["hospital","مستشفى"],["doctor","طبيب"],["medicine","دواء"],["headache","صداع"],["ill","مريض"],["healthy","صحي"],["exercise","تمرين"],["sport","رياضة"],["match","مباراة"],["team","فريق"],["music","موسيقى"],["film","فيلم"],["photo","صورة"],["phone","هاتف"],["computer","حاسوب"],["message","رسالة"],["email","بريد إلكتروني"],["job","وظيفة"],["office","مكتب"],["manager","مدير"],["meeting","اجتماع"],["busy","مشغول"],["early","مبكراً"],["late","متأخر"],["always","دائماً"],["usually","عادةً"],["sometimes","أحياناً"],["never","أبداً"],["often","غالباً"],["again","مرة أخرى"],["already","بالفعل"],["still","ما زال"],["soon","قريباً"],["because","لأن"],["but","لكن"],["if","إذا"],["when","عندما"],["before","قبل"],["after","بعد"],["between","بين"],["behind","خلف"],["near","قريب"],["far","بعيد"],["beautiful","جميل"],["difficult","صعب"],["easy","سهل"],["important","مهم"],["different","مختلف"],["same","نفس"],["every","كل"],["some","بعض"],["many","كثير"],["learn","يتعلم"],["teach","يعلّم"],["understand","يفهم"],["remember","يتذكر"],["forget","ينسى"],["know","يعرف"],["think","يعتقد"],["help","يساعد"],["ask","يسأل"],["answer","يجيب"],["wait","ينتظر"],["meet","يقابل"],["visit","يزور"],["travel","يسافر"],["stay","يبقى"],["leave","يغادر"],["arrive","يصل"],["start","يبدأ"],["finish","ينهي"],["try","يحاول"]],"B1":[["achieve","يحقق"],["advice","نصيحة"],["agree","يوافق"],["allow","يسمح"],["although","رغم أن"],["amount","كمية"],["appear","يظهر"],["article","مقال"],["attitude","موقف / اتجاه"],["available","متاح"],["avoid","يتجنب"],["careful","حذر"],["chance","فرصة"],["choice","اختيار"],["community","مجتمع"],["compare","يقارن"],["condition","حالة / شرط"],["consider","يعتبر"],["continue","يستمر"],["control","يتحكم"],["culture","ثقافة"],["customer","زبون"],["damage","ضرر"],["decide","يقرر"],["describe","يصف"],["develop","يطوّر"],["discuss","يناقش"],["discover","يكتشف"],["education","تعليم"],["effect","تأثير"],["effort","جهد"],["employ","يوظف"],["environment","بيئة"],["experience","خبرة / تجربة"],["explain","يشرح"],["fail","يفشل"],["feeling","شعور"],["focus","يركّز"],["future","مستقبل"],["goal","هدف"],["government","حكومة"],["growth","نمو"],["habit","عادة"],["health","صحة"],["improve","يحسّن"],["include","يشمل"],["increase","يزيد"],["influence","نفوذ / تأثير"],["information","معلومات"],["introduce","يقدّم / يعرّف"],["invite","يدعو"],["issue","قضية"],["knowledge","معرفة"],["language","لغة"],["level","مستوى"],["local","محلي"],["manage","يُدير"],["opinion","رأي"],["opportunity","فرصة"],["pleasure","متعة"],["polite","مهذب"],["possible","ممكن"],["prefer","يفضّل"],["prepare","يحضّر"],["pressure","ضغط"],["prevent","يمنع"],["probably","على الأرجح"],["problem","مشكلة"],["process","عملية"],["produce","ينتج"],["promise","يعد"],["protect","يحمي"],["provide","يوفّر"],["quality","جودة"],["reason","سبب"],["receive","يستلم"],["reduce","يقلل"],["relationship","علاقة"],["remind","يذكّر"],["repeat","يكرر"],["research","بحث"],["respect","احترام"],["responsible","مسؤول"],["result","نتيجة"],["risk","مخاطرة"],["role","دور"],["safe","آمن"],["save","يوفّر / يحفظ"],["science","علم"],["serious","جاد"],["situation","وضع"],["skill","مهارة"],["solution","حل"],["suggest","يقترح"],["support","يدعم"],["surprise","مفاجأة"],["system","نظام"],["technology","تكنولوجيا"],["traditional","تقليدي"],["trust","ثقة"]],"B2":[["achievement","إنجاز"],["adapt","يتكيف"],["aspect","جانب"],["assume","يفترض"],["attract","يجذب"],["benefit","فائدة"],["campaign","حملة"],["challenge","تحدٍّ"],["claim","يدّعي"],["combine","يجمع"],["commit","يلتزم"],["complex","معقّد"],["concept","مفهوم"],["conclude","يستنتج"],["conflict","صراع"],["consequence","عاقبة"],["consume","يستهلك"],["contrast","تباين"],["contribute","يساهم"],["convince","يقنع"],["crucial","حاسم"],["debate","نقاش"],["decline","تراجع"],["define","يعرّف"],["demand","طلب"],["demonstrate","يُظهر"],["depend","يعتمد"],["despite","رغم"],["determine","يحدد"],["distribute","يوزّع"],["economy","اقتصاد"],["eliminate","يزيل"],["emerge","يظهر / ينشأ"],["emphasise","يؤكد"],["encounter","يصادف"],["enhance","يعزّز"],["ensure","يضمن"],["establish","يؤسس"],["estimate","يقدّر"],["evidence","دليل"],["evolve","يتطور"],["expand","يتوسع"],["expose","يكشف"],["factor","عامل"],["feature","ميزة"],["fundamental","أساسي"],["generate","يولّد"],["global","عالمي"],["highlight","يسلط الضوء"],["impact","أثر"],["imply","يشير ضمناً"],["impose","يفرض"],["indicate","يدل"],["individual","فرد"],["inevitable","حتمي"],["initial","أولي"],["insight","بصيرة"],["interpret","يفسّر"],["investigate","يحقق في"],["involve","يتضمن"],["isolate","يعزل"],["maintain","يحافظ على"],["major","رئيسي"],["mention","يذكر"],["minor","ثانوي"],["monitor","يراقب"],["motivate","يحفّز"],["obtain","يحصل على"],["obvious","واضح"],["occur","يحدث"],["outcome","حصيلة"],["overcome","يتغلب على"],["participate","يشارك"],["perceive","يدرك"],["perspective","منظور"],["predict","يتنبأ"],["principle","مبدأ"],["priority","أولوية"],["rapid","سريع"],["reflect","يعكس"],["reject","يرفض"],["rely","يعتمد على"],["require","يتطلب"],["resource","مورد"],["reveal","يكشف"],["significant","مهم / ملحوظ"],["similar","مشابه"],["sufficient","كافٍ"],["survive","ينجو"],["tend","يميل"],["theory","نظرية"],["threat","تهديد"],["trend","اتجاه"],["ultimately","في النهاية"],["vary","يتفاوت"],["whereas","بينما"],["approach","نهج"],["context","سياق"],["criticism","نقد"],["scheme","خطة"]],"C1":[["abandon","يتخلى عن"],["abstract","مجرّد"],["accumulate","يتراكم"],["acknowledge","يعترف"],["advocate","يدافع عن"],["ambiguous","غامض"],["ambitious","طموح"],["analyse","يحلل"],["arbitrary","تعسفي"],["articulate","يعبّر بوضوح"],["assert","يؤكد"],["attribute","ينسب"],["authentic","أصيل"],["bias","تحيّز"],["coherent","متماسك"],["collaborate","يتعاون"],["compelling","مقنع"],["compromise","حل وسط"],["constraint","قيد"],["controversial","مثير للجدل"],["credible","موثوق"],["criteria","معايير"],["deliberate","متعمد"],["derive","يستمد"],["detrimental","ضار"],["diminish","يتضاءل"],["discrepancy","تناقض"],["disseminate","ينشر"],["distinct","متميز"],["dominant","مهيمن"],["dramatic","جذري / لافت"],["elaborate","يسهب / معقّد"],["empirical","تجريبي"],["enable","يمكّن"],["endorse","يؤيد"],["enforce","يطبّق بالقوة"],["enormous","هائل"],["equivalent","مكافئ"],["erode","يتآكل"],["exclude","يستبعد"],["exploit","يستغل"],["explicit","صريح"],["facilitate","يسهّل"],["flexible","مرن"],["fluctuate","يتذبذب"],["formulate","يصوغ"],["foster","يعزّز / يرعى"],["fragile","هش"],["framework","إطار عمل"],["genuine","حقيقي"],["hierarchy","تسلسل هرمي"],["hypothesis","فرضية"],["ideology","أيديولوجيا"],["implement","ينفّذ"],["incentive","حافز"],["incorporate","يدمج"],["inherent","متأصل"],["innovation","ابتكار"],["integrity","نزاهة"],["intricate","معقّد ودقيق"],["legitimate","مشروع"],["marginal","هامشي"],["mediate","يتوسط"],["mitigate","يخفف"],["nevertheless","مع ذلك"],["notion","فكرة"],["objective","موضوعي"],["obstacle","عقبة"],["oversight","إغفال / إشراف"],["paradox","مفارقة"],["phenomenon","ظاهرة"],["plausible","معقول"],["pragmatic","عملي"],["precedent","سابقة"],["prevailing","سائد"],["profound","عميق"],["prospect","احتمال"],["rationale","مبرر"],["reinforce","يعزّز"],["reluctant","متردد"],["resilient","صامد"],["restrain","يكبح"],["scrutiny","تدقيق"],["sceptical","متشكك"],["substantial","كبير / جوهري"],["subtle","دقيق / خفي"],["supplement","يكمّل"],["sustain","يديم"],["tangible","ملموس"],["tentative","مبدئي"],["thorough","شامل ودقيق"],["transparent","شفاف"],["undermine","يقوّض"],["unprecedented","غير مسبوق"],["viable","قابل للتطبيق"],["vulnerable","ضعيف / هش"],["widespread","واسع الانتشار"],["discourse","خطاب"],["implication","تبعة / دلالة"],["contemplate","يتأمل"]],"C2":[["aberration","شذوذ"],["acquiesce","يرضخ"],["admonish","يوبخ"],["aesthetic","جمالي"],["affable","ودود"],["alleviate","يخفف"],["ambivalent","متناقض المشاعر"],["ameliorate","يحسّن"],["anomaly","حالة شاذة"],["antagonise","يستعدي"],["apathy","لامبالاة"],["arduous","شاق"],["ascertain","يتحقق من"],["austere","متقشف"],["belie","يناقض"],["benevolent","خيّر"],["candid","صريح"],["capitulate","يستسلم"],["circumvent","يتحايل على"],["clandestine","سري"],["cogent","مقنع"],["conciliatory","تصالحي"],["conundrum","معضلة"],["copious","وفير"],["corroborate","يؤكد بالأدلة"],["cursory","سريع / سطحي"],["daunting","مُرهِب"],["debilitating","منهك"],["deference","إجلال / إذعان"],["delineate","يرسم / يوضح"],["denounce","يندد"],["dichotomy","ثنائية متضادة"],["disparate","متباين"],["eloquent","بليغ"],["elusive","عصيّ / مراوغ"],["empathy","تعاطف"],["enigmatic","لغز / غامض"],["ephemeral","زائل"],["equanimity","رباطة جأش"],["erudite","واسع العلم"],["exacerbate","يفاقم"],["exemplary","نموذجي"],["fastidious","مدقق / صعب الإرضاء"],["futile","عقيم"],["gregarious","اجتماعي"],["immutable","ثابت"],["impartial","محايد"],["impeccable","لا تشوبه شائبة"],["impervious","منيع"],["inexorable","لا يُصدّ"],["insidious","خبيث / خفي"],["juxtapose","يضع جنباً إلى جنب"],["laconic","مقتضب"],["lucid","واضح"],["magnanimous","كريم النفس"],["meticulous","دقيق جداً"],["mundane","عادي / دنيوي"],["nebulous","غامض"],["nonchalant","لامبالٍ"],["nostalgia","حنين"],["obsolete","عفا عليه الزمن"],["ostensible","ظاهري"],["paradigm","نموذج فكري"],["pedantic","متحذلق"],["perfunctory","شكلي / روتيني"],["pertinent","وثيق الصلة"],["poignant","مؤثر"],["precarious","غير مستقر"],["prevaricate","يماطل"],["proliferate","يتكاثر"],["prudent","حكيم / حذر"],["quintessential","جوهري / نموذجي"],["recalcitrant","عنيد"],["reconcile","يوفّق / يصالح"],["redundant","زائد"],["reticent","متحفظ"],["rhetoric","بلاغة / خطابة"],["sanguine","متفائل"],["scrupulous","دقيق الضمير"],["serendipity","صدفة سعيدة"],["solitary","منفرد"],["spurious","زائف"],["staunch","ثابت / مخلص"],["stoic","صبور رواقي"],["subvert","يقوّض"],["superfluous","زائد عن الحاجة"],["surreptitious","خفي / متستر"],["tenacious","متشبث"],["transient","عابر"],["trepidation","توجس"],["ubiquitous","موجود في كل مكان"],["unassailable","لا يُطعن فيه"],["vacillate","يتردد"],["venerable","جليل"],["verbose","مسهب"],["vindicate","يبرّئ / يثبت صحته"],["volatile","متقلب"],["wary","حذر"],["zealous","متحمس بشدة"],["exuberant","مفعم بالحيوية"]]};
+wordIndex=Math.floor(Date.now()/86400000)%100;
+
 
 window.onload=function(){
 applyLevel();
